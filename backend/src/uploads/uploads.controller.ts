@@ -12,9 +12,10 @@ export class UploadsController {
   @Post()
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter: (req, file, cb) => {
-      if (!file.originalname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/)) {
-        return cb(new BadRequestException('Solo se permiten imágenes'), false);
+      if (!file.originalname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+        return cb(new BadRequestException('Solo se permiten imágenes (jpg, jpeg, png, gif, svg, webp)'), false);
       }
       cb(null, true);
     },
@@ -25,10 +26,12 @@ export class UploadsController {
     }
     
     try {
-      const fileName = `${Date.now()}-${file.originalname}`;
+      // Sanitize filename: remove special characters and spaces
+      const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `${Date.now()}-${sanitizedOriginalName}`;
       const bucket = 'pos-images';
 
-      const { data, error } = await this.supabaseService.client.storage
+      const { data, error } = await this.supabaseService.adminClient.storage
         .from(bucket)
         .upload(fileName, file.buffer, {
           contentType: file.mimetype,
@@ -37,14 +40,14 @@ export class UploadsController {
 
       if (error) throw error;
 
-      const { data: publicData } = this.supabaseService.client.storage
+      const { data: publicData } = this.supabaseService.adminClient.storage
         .from(bucket)
         .getPublicUrl(data.path);
 
       return { url: publicData.publicUrl };
     } catch (error) {
       console.error('Error subiendo a Supabase:', error);
-      throw new BadRequestException('Error al subir la imagen a la nube. Asegúrate de que el bucket "pos-images" exista y sea público.');
+      throw new BadRequestException('Error al subir la imagen a la nube. Asegúrate de que el bucket "pos-images" sea público.');
     }
   }
 }

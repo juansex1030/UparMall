@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsObject } from 'class-validator';
 
 export class UpdateSettingDto {
   @IsString()
@@ -19,6 +19,18 @@ export class UpdateSettingDto {
 
   @IsString()
   @IsOptional()
+  accentColor?: string;
+
+  @IsString()
+  @IsOptional()
+  backgroundColor?: string;
+
+  @IsString()
+  @IsOptional()
+  backgroundImageUrl?: string;
+
+  @IsString()
+  @IsOptional()
   whatsappNumber?: string;
 
   @IsString()
@@ -35,9 +47,21 @@ export class UpdateSettingDto {
 
   @IsString()
   @IsOptional()
-  backgroundColor?: string;
+  fontFamily?: string;
 
   @IsString()
   @IsOptional()
-  backgroundImageUrl?: string;
+  navbarStyle?: string;
+
+  @IsString()
+  @IsOptional()
+  cardStyle?: string;
+
+  @IsObject()
+  @IsOptional()
+  socialLinks?: any;
+
+  @IsArray()
+  @IsOptional()
+  heroSlides?: any[];
 }

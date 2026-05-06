@@ -6,14 +6,28 @@ dotenv.config();
 @Injectable()
 export class SupabaseService {
   public client: SupabaseClient;
+  public adminClient: SupabaseClient;
 
   constructor() {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
       console.error('ERROR: SUPABASE_URL o SUPABASE_KEY no están definidos en .env');
     }
+    
+    // Cliente estándar (anon)
     this.client = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_KEY!
     );
+
+    // Cliente administrativo (service_role)
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      this.adminClient = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+    } else {
+      console.warn('WARNING: SUPABASE_SERVICE_ROLE_KEY no está definido. Algunas funciones administrativas podrían fallar.');
+      this.adminClient = this.client;
+    }
   }
 }

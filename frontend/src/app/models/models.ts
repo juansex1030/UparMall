@@ -27,18 +27,35 @@ export interface VariantOption {
   isAvailable?: boolean; // Si hay stock o no
 }
 
+export interface HeroSlide {
+  url: string;
+  title?: string;
+  subtitle?: string;
+}
+
 export interface Settings {
   id: number;
   businessName: string;
   logoUrl?: string;
   primaryColor: string;
-  secondaryColor: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
   whatsappNumber: string;
   welcomeMessage: string;
-  categories?: string[];
-  slug?: string;
   description?: string;
-  backgroundColor?: string;
+  slug?: string;
+  categories?: string[];
+  heroSlides?: HeroSlide[];
+  // Visual & Brand Configuration
+  fontFamily?: string;
+  navbarStyle?: 'glass' | 'solid' | 'minimal';
+  cardStyle?: 'flat' | 'elevated' | 'glass';
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+  };
   backgroundImageUrl?: string;
 }
 

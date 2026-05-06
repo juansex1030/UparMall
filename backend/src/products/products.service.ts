@@ -21,7 +21,7 @@ export class ProductsService {
       updatedAt: now
     };
 
-    const { data, error } = await this.supabase.client
+    const { data, error } = await this.supabase.adminClient
       .from('Product')
       .insert([payload])
       .select()
@@ -32,7 +32,7 @@ export class ProductsService {
   }
 
   async findAll(storeId?: string) {
-    let query = this.supabase.client.from('Product').select('*').order('createdAt', { ascending: false });
+    let query = this.supabase.adminClient.from('Product').select('*').order('createdAt', { ascending: false });
     
     if (storeId) {
       query = query.eq('storeId', storeId);
@@ -45,7 +45,7 @@ export class ProductsService {
   }
 
   async findAllBySlug(slug: string) {
-    const { data: store, error: storeError } = await this.supabase.client
+    const { data: store, error: storeError } = await this.supabase.adminClient
       .from('Stores')
       .select('id')
       .eq('slug', slug)
@@ -53,7 +53,7 @@ export class ProductsService {
 
     if (storeError || !store) throw new NotFoundException(`Tienda con slug '${slug}' no encontrada`);
 
-    const { data, error } = await this.supabase.client
+    const { data, error } = await this.supabase.adminClient
       .from('Product')
       .select('*')
       .eq('storeId', store.id)
@@ -64,7 +64,7 @@ export class ProductsService {
   }
 
   async findOne(id: number, storeId?: string) {
-    let query = this.supabase.client.from('Product').select('*').eq('id', id);
+    let query = this.supabase.adminClient.from('Product').select('*').eq('id', id);
     if (storeId) {
       query = query.eq('storeId', storeId);
     }
@@ -86,7 +86,7 @@ export class ProductsService {
     if (updateProductDto.variants !== undefined)       payload.variants = updateProductDto.variants;
     if (updateProductDto.specifications !== undefined) payload.specifications = updateProductDto.specifications;
 
-    const { data, error } = await this.supabase.client
+    const { data, error } = await this.supabase.adminClient
       .from('Product')
       .update(payload)
       .eq('id', id)
@@ -99,7 +99,7 @@ export class ProductsService {
   }
 
   async remove(id: number, storeId: string) {
-    const { error } = await this.supabase.client
+    const { error } = await this.supabase.adminClient
       .from('Product')
       .delete()
       .eq('id', id)

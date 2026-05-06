@@ -30,14 +30,19 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
             <img [src]="item.product.imageUrl || 'https://via.placeholder.com/80'" class="item-img">
             <div class="item-details">
               <h4>{{ item.product.name }}</h4>
+              <p class="item-variants" *ngIf="item.selectedOptions">
+                <span *ngFor="let opt of item.selectedOptions | keyvalue">
+                  {{ opt.key }}: {{ $any(opt.value).label }}
+                </span>
+              </p>
               <p class="item-price">$ {{ item.product.price | number }}</p>
             </div>
             <div class="quantity-controls">
-              <button (click)="updateQty(item.product.id, item.quantity - 1)"><svg lucideMinus size="16"></svg></button>
+              <button (click)="updateQty(item.product.id, item.quantity - 1, item.selectedOptions)"><svg lucideMinus size="16"></svg></button>
               <span>{{ item.quantity }}</span>
-              <button (click)="updateQty(item.product.id, item.quantity + 1)"><svg lucidePlus size="16"></svg></button>
+              <button (click)="updateQty(item.product.id, item.quantity + 1, item.selectedOptions)"><svg lucidePlus size="16"></svg></button>
             </div>
-            <button class="remove-btn" (click)="remove(item.product.id)">
+            <button class="remove-btn" (click)="remove(item.product.id, item.selectedOptions)">
               <svg lucideTrash2 size="20"></svg>
             </button>
           </div>
@@ -81,6 +86,43 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
             </div>
           </div>
 
+          <!-- Pickup Info Form (Only for pickup) -->
+          <div class="shipping-form" *ngIf="deliveryMethod === 'pickup'">
+            <h4>Datos de quien retira</h4>
+            <div class="form-group">
+              <label>Nombre del cliente</label>
+              <input type="text" [(ngModel)]="pickupName" placeholder="Nombre completo">
+            </div>
+          </div>
+
+          <!-- Payment Method Selection -->
+          <div class="delivery-options payment-section">
+            <h4>Método de pago</h4>
+            <div class="payment-grid">
+              <button 
+                class="payment-pill" 
+                [class.active]="paymentMethod === 'efectivo'"
+                (click)="paymentMethod = 'efectivo'">
+                <span class="payment-icon">💵</span>
+                <span>Efectivo</span>
+              </button>
+              <button 
+                class="payment-pill" 
+                [class.active]="paymentMethod === 'transferencia'"
+                (click)="paymentMethod = 'transferencia'">
+                <span class="payment-icon">🏦</span>
+                <span>Transferencia</span>
+              </button>
+              <button 
+                class="payment-pill" 
+                [class.active]="paymentMethod === 'contraentrega'"
+                (click)="paymentMethod = 'contraentrega'">
+                <span class="payment-icon">🚚</span>
+                <span>Contraentrega</span>
+              </button>
+            </div>
+          </div>
+
           <div class="summary-box">
             <div class="summary-row">
               <span>Subtotal:</span>
@@ -96,7 +138,7 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
             </div>
           </div>
           
-          <button class="whatsapp-btn" (click)="sendOrder()" [disabled]="(deliveryMethod === 'delivery' && !isShippingValid()) || isSending">
+          <button class="whatsapp-btn" (click)="sendOrder()" [disabled]="!isOrderValid() || isSending">
             <svg lucideSend size="20"></svg>
             Enviar Pedido por WhatsApp
           </button>
@@ -122,17 +164,30 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
     .quantity-controls { display: flex; align-items: center; gap: 10px; }
     .quantity-controls button { width: 32px; height: 32px; padding: 0; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .remove-btn { color: #ff5252; background: transparent; padding: 0; min-height: auto; }
-    .cart-footer { margin-top: 30px; border-top: 2px solid rgba(0,0,0,0.1); padding-top: 20px; }
+    .cart-footer { margin-top: 30px; border-top: 2px solid rgba(0,0,0,0.1); padding-top: 20px; padding-bottom: 40px; }
     
     .delivery-options { margin-bottom: 25px; }
-    .delivery-options h4 { margin-bottom: 15px; color: var(--text-dark); }
+    .delivery-options h4 { margin-bottom: 15px; color: var(--text-dark); font-weight: 700; }
     .radio-group { display: flex; flex-direction: column; gap: 10px; }
     .radio-label { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: 0.2s; }
     .radio-label:hover { background: #f8f9fa; }
-    .radio-label.selected { border-color: var(--primary-color); background: rgba(var(--primary-color-rgb), 0.05); }
+    .radio-label.selected { border-color: var(--primary-color); background: rgba(var(--primary-color-rgb), 0.05); border-width: 2px; }
     .radio-label input { margin: 0; width: 18px; height: 18px; accent-color: var(--primary-color); }
     .radio-label span { font-weight: 600; color: #555; font-size: 1.05rem; }
     
+    /* Payment Methods */
+    .payment-section { margin-top: 30px; }
+    .payment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .payment-pill {
+      background: white; border: 2px solid #eee; padding: 15px 5px; border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .payment-pill.active { border-color: var(--primary-color); background: rgba(var(--primary-color-rgb), 0.05); }
+    .payment-icon { font-size: 1.5rem; }
+    .payment-pill span:not(.payment-icon) { font-size: 0.8rem; font-weight: 700; color: #555; }
+    .payment-pill.active span { color: var(--primary-color); }
+
     .summary-box { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
     .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; color: #666; font-size: 1.1rem; }
     .total-row { display: flex; justify-content: space-between; font-size: 1.4rem; font-weight: 800; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc; }
@@ -141,13 +196,14 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
     .whatsapp-btn {
       width: 100%; background: #25d366; color: white; font-size: 1.1rem; height: 56px;
       box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); border-radius: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
     }
     .whatsapp-btn:hover { background: #20bd5a; transform: translateY(-2px); }
     .whatsapp-btn:disabled { background: #ccc; opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
 
     /* Shipping Form */
     .shipping-form { margin-bottom: 25px; padding: 20px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); }
-    .shipping-form h4 { margin-bottom: 15px; color: #333; }
+    .shipping-form h4 { margin-bottom: 15px; color: #333; font-weight: 700; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group.full-width { grid-column: span 2; }
@@ -159,8 +215,11 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
     .form-group input:focus { border-color: var(--primary-color); outline: none; }
 
     @media (max-width: 600px) {
+      .cart-content { padding: 20px; margin-bottom: 40px; }
       .form-grid { grid-template-columns: 1fr; }
       .form-group.full-width { grid-column: span 1; }
+      .payment-grid { grid-template-columns: 1fr; }
+      .payment-pill { flex-direction: row; padding: 12px 20px; justify-content: flex-start; gap: 15px; }
     }
   `]
 })
@@ -173,6 +232,8 @@ export class CartComponent implements OnInit {
   deliveryMethod: 'pickup' | 'delivery' = 'pickup';
   deliveryFee = 6000;
   shippingInfo = { name: '', address: '', neighborhood: '', phone: '' };
+  pickupName = '';
+  paymentMethod: 'efectivo' | 'transferencia' | 'contraentrega' = 'efectivo';
   isSending = false;
 
   get finalTotal() {
@@ -218,16 +279,28 @@ export class CartComponent implements OnInit {
     });
   }
 
-  updateQty(id: number, qty: number) {
-    this.cartService.updateQuantity(id, qty);
+  getOptionsKey(options: any): string {
+    return JSON.stringify(options || {});
   }
 
-  remove(id: number) {
-    this.cartService.removeFromCart(id);
+  updateQty(id: number, qty: number, options: any = {}) {
+    this.cartService.updateQuantity(id, qty, this.getOptionsKey(options));
+  }
+
+  remove(id: number, options: any = {}) {
+    this.cartService.removeFromCart(id, this.getOptionsKey(options));
   }
 
   isShippingValid(): boolean {
     return !!(this.shippingInfo.name && this.shippingInfo.address && this.shippingInfo.neighborhood && this.shippingInfo.phone);
+  }
+
+  isOrderValid(): boolean {
+    if (this.deliveryMethod === 'delivery') {
+      return this.isShippingValid();
+    } else {
+      return !!this.pickupName;
+    }
   }
 
   sendOrder() {
@@ -237,7 +310,9 @@ export class CartComponent implements OnInit {
       this.settings,
       this.deliveryMethod,
       this.deliveryFee,
-      this.deliveryMethod === 'delivery' ? this.shippingInfo : undefined
+      this.deliveryMethod === 'delivery' ? this.shippingInfo : undefined,
+      this.paymentMethod,
+      this.deliveryMethod === 'pickup' ? this.pickupName : undefined
     );
     if (link) {
       window.open(link, '_blank');

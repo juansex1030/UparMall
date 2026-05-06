@@ -81,25 +81,22 @@ export class CartService {
 
   getItemTotalPrice(item: CartItem): number {
     const options = item.selectedOptions ? Object.values(item.selectedOptions) : [];
-    const variantWithPrice = options.find((opt: any) => opt.price > 0);
-    
-    let price;
-    if (variantWithPrice) {
-      // Si hay variante con precio, sumamos solo los precios de las variantes
-      price = options.reduce((acc, opt: any) => acc + (opt.price || 0), 0);
-    } else {
-      // Si no, usamos el precio base del producto
-      price = item.product.price;
-    }
-    
-    return price * item.quantity;
+    const optionsPrice = options.reduce((acc, opt: any) => acc + (opt.price || 0), 0);
+    return (item.product.price + optionsPrice) * item.quantity;
   }
 
   getTotalPrice() {
     return this.cartItems.value.reduce((total, item) => total + this.getItemTotalPrice(item), 0);
   }
 
-  generateWhatsAppLink(settings: Settings, deliveryMethod: 'pickup' | 'delivery' = 'pickup', deliveryFee: number = 0, shippingInfo?: any) {
+  generateWhatsAppLink(
+    settings: Settings, 
+    deliveryMethod: 'pickup' | 'delivery' = 'pickup', 
+    deliveryFee: number = 0, 
+    shippingInfo?: any,
+    paymentMethod: string = 'efectivo',
+    pickupName?: string
+  ) {
     const items = this.cartItems.value;
     if (items.length === 0) return null;
 
@@ -118,6 +115,7 @@ export class CartService {
     const iconCart   = '\u{1F6D2}'; // 🛒
     const iconMoney  = '\u{1F4B0}'; // 💰
     const iconCheck  = '\u{2705}';  // ✅
+    const iconCard   = '\u{1F4B3}'; // 💳
 
     const lines: string[] = [];
 
@@ -133,8 +131,19 @@ export class CartService {
       lines.push('');
     } else {
       lines.push(iconStore + ' METODO: Pasar a Recoger en tienda');
+      if (pickupName) {
+        lines.push(iconPerson + ' Persona que retira: ' + pickupName);
+      }
       lines.push('');
     }
+
+    const paymentLabels: { [key: string]: string } = {
+      'efectivo': 'Efectivo',
+      'transferencia': 'Transferencia',
+      'contraentrega': 'Contraentrega'
+    };
+    lines.push(iconCard + ' METODO DE PAGO: ' + (paymentLabels[paymentMethod] || paymentMethod));
+    lines.push('');
 
     lines.push(iconCart + ' PRODUCTOS');
 

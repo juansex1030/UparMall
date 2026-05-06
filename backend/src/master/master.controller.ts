@@ -27,7 +27,7 @@ export class MasterController {
 
     // Obtener todos los usuarios de Auth para cruzar los correos
     // Nota: listUsers() requiere la service_role key, que ya configuramos en el SupabaseService
-    const { data: { users }, error: authError } = await this.supabase.client.auth.admin.listUsers();
+    const { data: { users }, error: authError } = await this.supabase.adminClient.auth.admin.listUsers();
     
     if (authError) {
       console.error('Error listando usuarios de auth:', authError);

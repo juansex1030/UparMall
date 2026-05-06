@@ -1,18 +1,14 @@
-import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
-export class SettingsService implements OnModuleInit {
+export class SettingsService {
   constructor(private supabase: SupabaseService) {}
-
-  async onModuleInit() {
-    // Initialization is now handled at store creation time, not globally.
-  }
 
   async findBySlug(slug: string) {
     // Primero, buscar el storeId basado en el slug
-    const { data: store, error: storeError } = await this.supabase.client
+    const { data: store, error: storeError } = await this.supabase.adminClient
       .from('Stores')
       .select('id')
       .eq('slug', slug)
@@ -20,7 +16,7 @@ export class SettingsService implements OnModuleInit {
 
     if (storeError || !store) throw new NotFoundException(`Configuración para la tienda '${slug}' no encontrada`);
 
-    const { data, error } = await this.supabase.client
+    const { data, error } = await this.supabase.adminClient
       .from('Settings')
       .select('*')
       .eq('storeId', store.id)
@@ -31,18 +27,18 @@ export class SettingsService implements OnModuleInit {
   }
 
   async findByStoreId(storeId: string) {
-    let { data: settings, error } = await this.supabase.client
+    let { data: settings, error } = await this.supabase.adminClient
       .from('Settings')
       .select('*, Stores ( slug )')
       .eq('storeId', storeId)
       .single();
 
     if (error && error.code === 'PGRST116') {
-      const { data: userResponse } = await this.supabase.client.auth.admin?.getUserById(storeId) || { data: null };
+      const { data: userResponse } = await this.supabase.adminClient.auth.admin?.getUserById(storeId) || { data: null };
       const email = userResponse?.user?.email || `tienda-${Math.floor(Math.random()*1000)}`;
       const defaultSlug = email.split('@')[0] + '-' + Math.floor(Math.random() * 100);
 
-      const { error: storeError } = await this.supabase.client.from('Stores').upsert([{
+      const { error: storeError } = await this.supabase.adminClient.from('Stores').upsert([{
         id: storeId,
         slug: defaultSlug,
         ownerName: email
@@ -51,13 +47,17 @@ export class SettingsService implements OnModuleInit {
       if (storeError) throw storeError;
 
       // Crear Settings
-      const { data: newSettings, error: insertError } = await this.supabase.client.from('Settings').upsert([{
+      const { data: newSettings, error: insertError } = await this.supabase.adminClient.from('Settings').upsert([{
         storeId: storeId,
         businessName: 'Mi Nueva Tienda',
         primaryColor: '#3a536e',
         secondaryColor: '#3f51b5',
         whatsappNumber: '573000000000',
-        welcomeMessage: '¡Hola! Quiero hacer un pedido.'
+        welcomeMessage: '¡Hola! Quiero hacer un pedido.',
+        fontFamily: "'Inter', sans-serif",
+        navbarStyle: 'glass',
+        socialLinks: { instagram: '', facebook: '', tiktok: '' },
+        heroSlides: []
       }], { onConflict: 'storeId' }).select('*, Stores ( slug )').single();
 
       if (insertError) throw insertError;
@@ -78,7 +78,7 @@ export class SettingsService implements OnModuleInit {
     
     // Si se envía el slug, actualizarlo en la tabla Stores
     if (slug) {
-      const { error: storeError } = await this.supabase.client
+      const { error: storeError } = await this.supabase.adminClient
         .from('Stores')
         .update({ slug })
         .eq('id', storeId);
@@ -93,7 +93,7 @@ export class SettingsService implements OnModuleInit {
       ...cleanData
     };
 
-    const { data, error } = await this.supabase.client
+    const { data, error } = await this.supabase.adminClient
       .from('Settings')
       .update(payload)
       .eq('storeId', storeId)

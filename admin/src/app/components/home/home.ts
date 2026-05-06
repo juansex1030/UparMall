@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -101,13 +102,12 @@ import { AuthService } from '../../services/auth.service';
       padding: 20px;
     }
     .glass-panel {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.8);
       border-radius: 24px;
       padding: 40px;
       width: 100%;
       max-width: 450px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     .brand { text-align: center; margin-bottom: 30px; }
     .brand h1 { color: #3f51b5; margin: 0 0 10px 0; font-size: 2rem; }
@@ -135,13 +135,14 @@ import { AuthService } from '../../services/auth.service';
     .msg.success { background: #f0fff4; color: #27ae60; border: 1px solid #c3e6cb; }
   `]
 })
-export class HomeComponent {
+export class HomeComponent implements OnDestroy {
   mode: 'login' | 'register' | 'forgot' | 'update-password' = 'login';
   email = '';
   password = '';
   loading = false;
   errorMsg = '';
   successMsg = '';
+  private _authSub!: Subscription;
 
   private setMode(m: typeof this.mode) {
     this.mode = m;
@@ -153,9 +154,13 @@ export class HomeComponent {
     private authService: AuthService,
     private router: Router
   ) {
-    this.authService.authEvent$.subscribe(event => {
+    this._authSub = this.authService.authEvent$.subscribe(event => {
       if (event === 'PASSWORD_RECOVERY') this.setMode('update-password');
     });
+  }
+
+  ngOnDestroy() {
+    this._authSub?.unsubscribe();
   }
 
   async onLogin() {

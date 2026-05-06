@@ -54,9 +54,11 @@ export interface Settings {
   socialLinks?: {
     instagram?: string;
     facebook?: string;
+    twitter?: string;
     tiktok?: string;
   };
   backgroundImageUrl?: string;
+  deliveryFee?: number;
 }
 
 export interface CartItem {

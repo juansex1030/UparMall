@@ -23,35 +23,56 @@ export class CartService {
       try {
         this.cartItems.next(JSON.parse(saved));
       } catch (e) {
-        console.error('Error cargando el carrito persistido', e);
+        console.error('Error cargando el carrito persistido, limpiando...', e);
+        localStorage.removeItem('uparmall_cart');
       }
     }
   }
 
+  public getStableOptionsKey(options: any): string {
+    if (!options) return '{}';
+    const stable: any = {};
+    Object.keys(options).sort().forEach(key => {
+      stable[key] = options[key];
+    });
+    return JSON.stringify(stable);
+  }
+
   addToCart(product: Product, selectedOptions?: { [key: string]: any }) {
     const currentItems = this.cartItems.value;
-    
-    // Si tiene opciones, lo tratamos como un item único basado en esas opciones
-    const optionsKey = selectedOptions ? JSON.stringify(selectedOptions) : '';
-    const existingItem = currentItems.find(item => 
-      item.product.id === product.id && 
-      JSON.stringify(item.selectedOptions || {}) === optionsKey
+    const optionsKey = this.getStableOptionsKey(selectedOptions);
+
+    // Ensure option prices are numbers
+    const cleanOptions: any = {};
+    if (selectedOptions) {
+      Object.keys(selectedOptions).forEach(key => {
+        cleanOptions[key] = {
+          ...selectedOptions[key],
+          price: Number(selectedOptions[key].price) || 0
+        };
+      });
+    }
+
+    const existingItem = currentItems.find(item =>
+      item.product.id === product.id &&
+      this.getStableOptionsKey(item.selectedOptions) === optionsKey
     );
 
     if (existingItem) {
       existingItem.quantity += 1;
       this.cartItems.next([...currentItems]);
     } else {
-      this.cartItems.next([...currentItems, { product, quantity: 1, selectedOptions }]);
+      this.cartItems.next([...currentItems, { product, quantity: 1, selectedOptions: cleanOptions }]);
     }
     this.saveCart(this.cartItems.value);
   }
 
   removeFromCart(productId: number, optionsKey?: string) {
     const currentItems = this.cartItems.value;
+    const targetKey = optionsKey || '{}';
     const updatedItems = currentItems.filter(item => {
-      const currentOptKey = JSON.stringify(item.selectedOptions || {});
-      return !(item.product.id === productId && (!optionsKey || currentOptKey === optionsKey));
+      const currentOptKey = this.getStableOptionsKey(item.selectedOptions);
+      return !(item.product.id === productId && currentOptKey === targetKey);
     });
     this.cartItems.next(updatedItems);
     this.saveCart(updatedItems);
@@ -59,9 +80,10 @@ export class CartService {
 
   updateQuantity(productId: number, quantity: number, optionsKey?: string) {
     const currentItems = this.cartItems.value;
-    const item = currentItems.find(item => 
-      item.product.id === productId && 
-      JSON.stringify(item.selectedOptions || {}) === (optionsKey || '{}')
+    const targetKey = optionsKey || '{}';
+    const item = currentItems.find(item =>
+      item.product.id === productId &&
+      this.getStableOptionsKey(item.selectedOptions) === targetKey
     );
     if (item) {
       item.quantity = quantity;
@@ -80,9 +102,30 @@ export class CartService {
   }
 
   getItemTotalPrice(item: CartItem): number {
+    return this.getItemUnitPrice(item) * item.quantity;
+  }
+
+  getItemUnitPrice(item: CartItem): number {
     const options = item.selectedOptions ? Object.values(item.selectedOptions) : [];
-    const optionsPrice = options.reduce((acc, opt: any) => acc + (opt.price || 0), 0);
-    return (item.product.price + optionsPrice) * item.quantity;
+    const variantPrices = options.map((opt: any) => Number(opt.price) || 0);
+    const maxVariantPrice = Math.max(0, ...variantPrices);
+
+    // The variant price is the TOTAL price. If set (>0), it wins.
+    return maxVariantPrice > 0 ? maxVariantPrice : (item.product.price || 0);
+  }
+
+  getItemImage(item: CartItem): string {
+    if (item.selectedOptions) {
+      const optionsWithImage = Object.values(item.selectedOptions).filter((opt: any) => opt.imageUrl);
+      if (optionsWithImage.length > 0) {
+        return (optionsWithImage[optionsWithImage.length - 1] as any).imageUrl;
+      }
+    }
+    return item.product.imageUrl || 'https://via.placeholder.com/100';
+  }
+
+  getOptionsKey(options: any): string {
+    return JSON.stringify(options || {});
   }
 
   getTotalPrice() {
@@ -90,9 +133,9 @@ export class CartService {
   }
 
   generateWhatsAppLink(
-    settings: Settings, 
-    deliveryMethod: 'pickup' | 'delivery' = 'pickup', 
-    deliveryFee: number = 0, 
+    settings: Settings,
+    deliveryMethod: 'pickup' | 'delivery' = 'pickup',
+    deliveryFee: number = 0,
     shippingInfo?: any,
     paymentMethod: string = 'efectivo',
     pickupName?: string
@@ -104,35 +147,22 @@ export class CartService {
     const finalTotal = subtotal + (deliveryMethod === 'delivery' ? deliveryFee : 0);
     const NL = '\n';
 
-    // Escapes Unicode nativos de TypeScript — resueltos en compilación, sin dependencias de runtime
-    const iconBox    = '\u{1F4E6}'; // 📦
-    const iconTruck  = '\u{1F69A}'; // 🚚
-    const iconPerson = '\u{1F464}'; // 👤
-    const iconPin    = '\u{1F4CD}'; // 📍
-    const iconHouse  = '\u{1F3E0}'; // 🏠
-    const iconMobile = '\u{1F4F1}'; // 📱
-    const iconStore  = '\u{1F3EA}'; // 🏪
-    const iconCart   = '\u{1F6D2}'; // 🛒
-    const iconMoney  = '\u{1F4B0}'; // 💰
-    const iconCheck  = '\u{2705}';  // ✅
-    const iconCard   = '\u{1F4B3}'; // 💳
-
     const lines: string[] = [];
 
-    lines.push(iconBox + ' NUEVO PEDIDO - ' + settings.businessName);
+    lines.push('NUEVO PEDIDO - ' + settings.businessName);
     lines.push('');
 
     if (deliveryMethod === 'delivery' && shippingInfo) {
-      lines.push(iconTruck + ' DATOS DE ENVIO');
-      lines.push(iconPerson + ' Cliente: ' + shippingInfo.name);
-      lines.push(iconPin + ' Direccion: ' + shippingInfo.address);
-      lines.push(iconHouse + ' Barrio/Edif: ' + shippingInfo.neighborhood);
-      lines.push(iconMobile + ' Celular: ' + shippingInfo.phone);
+      lines.push('DATOS DE ENVIO');
+      lines.push('Cliente: ' + shippingInfo.name);
+      lines.push('Direccion: ' + shippingInfo.address);
+      lines.push('Barrio/Edif: ' + shippingInfo.neighborhood);
+      lines.push('Celular: ' + shippingInfo.phone);
       lines.push('');
     } else {
-      lines.push(iconStore + ' METODO: Pasar a Recoger en tienda');
+      lines.push('METODO: Pasar a Recoger en tienda');
       if (pickupName) {
-        lines.push(iconPerson + ' Persona que retira: ' + pickupName);
+        lines.push('Persona que retira: ' + pickupName);
       }
       lines.push('');
     }
@@ -142,13 +172,13 @@ export class CartService {
       'transferencia': 'Transferencia',
       'contraentrega': 'Contraentrega'
     };
-    lines.push(iconCard + ' METODO DE PAGO: ' + (paymentLabels[paymentMethod] || paymentMethod));
+    lines.push('METODO DE PAGO: ' + (paymentLabels[paymentMethod] || paymentMethod));
     lines.push('');
 
-    lines.push(iconCart + ' PRODUCTOS');
+    lines.push('PRODUCTOS');
 
     items.forEach(item => {
-      let line = '• ' + item.quantity + 'x ' + item.product.name;
+      let line = item.quantity + 'x ' + item.product.name;
       if (item.selectedOptions) {
         const opts = Object.entries(item.selectedOptions)
           .map(([key, opt]: [string, any]) => key + ': ' + opt.label)
@@ -160,7 +190,7 @@ export class CartService {
     });
 
     lines.push('');
-    lines.push(iconMoney + ' RESUMEN');
+    lines.push('RESUMEN');
     lines.push('Subtotal: $' + subtotal.toLocaleString('es-CO'));
 
     if (deliveryMethod === 'delivery') {
@@ -168,10 +198,11 @@ export class CartService {
     }
 
     lines.push('');
-    lines.push(iconCheck + ' TOTAL A PAGAR: $' + finalTotal.toLocaleString('es-CO'));
+    lines.push('TOTAL A PAGAR: $' + finalTotal.toLocaleString('es-CO'));
 
     const message = lines.join(NL);
 
-    return 'https://wa.me/' + settings.whatsappNumber + '?text=' + encodeURIComponent(message);
+    let phone = settings.whatsappNumber.replace(/\D/g, '');
+    return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
   }
 }

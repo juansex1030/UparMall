@@ -30,8 +30,8 @@ import { RouterLink } from '@angular/router';
     }
     .hero-content {
       max-width: 800px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
       padding: 60px 40px;
       border-radius: 24px;
       border: 1px solid rgba(255, 255, 255, 0.2);

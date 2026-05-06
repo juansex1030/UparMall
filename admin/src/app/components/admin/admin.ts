@@ -1,20 +1,18 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DataService } from '../../services/data.service';
-import { AuthService } from '../../services/auth.service';
-import { Product, Settings } from '../../models/models';
-import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideSettings, LucidePalette, LucideImage, LucideShare2 } from '@lucide/angular';
+import { DataService } from '@shared/services/data.service';
+import { AuthService } from '@shared/services/auth.service';
+import { Subscription } from 'rxjs';
+import { Product, Settings } from '@shared/models/models';
+import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideEyeOff, LucideSettings, LucidePalette, LucideImage, LucideShare2, LucideCheckCircle, LucideCircleOff } from '@lucide/angular';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideSettings, LucidePalette, LucideImage, LucideShare2],
+  imports: [CommonModule, FormsModule, LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideEyeOff, LucideSettings, LucidePalette, LucideImage, LucideShare2, LucideCheckCircle, LucideCircleOff],
   template: `
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Outfit:wght@400;700;900&family=Poppins:wght@400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Dancing+Script:wght@700&family=Satisfy&display=swap');
-    </style>
     <div class="admin-container" *ngIf="settings">
       <header class="admin-header">
         <div class="header-main">
@@ -70,6 +68,13 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
           </button>
         </div>
       </header>
+      
+      <!-- Integrated Notification Banner -->
+      <div class="toast-wrapper" *ngIf="toast.visible">
+        <div class="toast-pill" [class.toast-error]="toast.isError">
+          {{ toast.message }}
+        </div>
+      </div>
 
       <!-- Products Tab -->
       <div class="tab-content" *ngIf="activeTab === 'products'">
@@ -148,11 +153,15 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                 <input type="text" [(ngModel)]="currentProduct.category" name="category" placeholder="Ej: Cargadores">
               </div>
               <div class="form-group">
-                <label>Estado</label>
-                <select [(ngModel)]="currentProduct.isActive" name="isActive">
-                  <option [ngValue]="true">Activo</option>
-                  <option [ngValue]="false">Inactivo</option>
-                </select>
+                <label>Visibilidad del Producto</label>
+                <button type="button" 
+                  class="btn-toggle-large" 
+                  [class.active]="currentProduct.isActive"
+                  (click)="currentProduct.isActive = !currentProduct.isActive">
+                  <svg *ngIf="currentProduct.isActive" lucideEye size="20"></svg>
+                  <svg *ngIf="!currentProduct.isActive" lucideEyeOff size="20"></svg>
+                  <span>{{ currentProduct.isActive ? 'Producto Visible' : 'Producto Oculto' }}</span>
+                </button>
               </div>
             </div>
 
@@ -189,10 +198,18 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                     <input type="text" [(ngModel)]="v.name" [name]="'vname' + i" placeholder="Nombre (Ej: Color)" style="flex: 1; padding: 8px 12px;">
                     <button type="button" class="btn-circle" style="background: #fee2e2; color: #ef4444;" (click)="removeVariantGroup(i)"><svg lucideTrash2 size="14"></svg></button>
                   </div>
-                  <div *ngFor="let opt of v.options; let j = index" style="display: flex; gap: 5px; margin-bottom: 5px;">
-                    <input type="text" [(ngModel)]="opt.label" [name]="'opt' + i + j" placeholder="Opción" style="flex: 2; padding: 5px 10px; font-size: 0.8rem;">
-                    <input type="number" [(ngModel)]="opt.price" [name]="'optp' + i + j" placeholder="+ Precio" style="flex: 1; padding: 5px 10px; font-size: 0.8rem;">
-                    <button type="button" (click)="removeOption(i, j)" style="border: none; background: transparent; color: #ef4444;"><svg lucideX size="14"></svg></button>
+                  <div *ngFor="let opt of v.options; let j = index" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                    <button type="button" 
+                      class="btn-toggle-mini" 
+                      [class.active]="opt.isAvailable !== false"
+                      (click)="opt.isAvailable = opt.isAvailable === false ? true : false"
+                      [title]="opt.isAvailable === false ? 'Activar' : 'Desactivar'">
+                      <svg *ngIf="opt.isAvailable !== false" lucideCheckCircle size="14"></svg>
+                      <svg *ngIf="opt.isAvailable === false" lucideCircleOff size="14"></svg>
+                    </button>
+                    <input type="text" [(ngModel)]="opt.label" [name]="'opt' + i + j" placeholder="Opción" style="flex: 2; padding: 8px 12px; font-size: 0.85rem; border-radius: 10px;">
+                    <input type="number" [(ngModel)]="opt.price" [name]="'optp' + i + j" placeholder="+ Precio" style="flex: 1; padding: 8px 12px; font-size: 0.85rem; border-radius: 10px;">
+                    <button type="button" class="btn-circle btn-delete-mini" (click)="removeOption(i, j)"><svg lucideX size="14"></svg></button>
                   </div>
                   <button type="button" (click)="addOption(i)" style="width: 100%; border: 1px dashed #ccc; background: transparent; padding: 5px; border-radius: 8px; font-size: 0.75rem; margin-top: 10px;">+ Opción</button>
                 </div>
@@ -267,10 +284,14 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                       <input type="text" [(ngModel)]="settings.slug" placeholder="tu-tienda">
                     </div>
                   </div>
+                  <div class="form-group">
+                    <label>Costo de Domicilio ($)</label>
+                    <input type="number" [(ngModel)]="settings.deliveryFee" placeholder="Ej: 6000">
+                  </div>
                 </div>
                 <div class="form-group">
-                  <label>Descripción / Eslogan</label>
-                  <textarea [(ngModel)]="settings.description" rows="2" placeholder="Tu eslogan aquí..."></textarea>
+                  <label>Sobre Nosotros (Descripción de la tienda)</label>
+                  <textarea [(ngModel)]="settings.description" rows="5" placeholder="Escribe aquí la historia o descripción de tu negocio..."></textarea>
                 </div>
                 <div class="form-group">
                   <label>Mensaje de Bienvenida (Hero)</label>
@@ -384,6 +405,14 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                     <input type="text" [(ngModel)]="settings.socialLinks.instagram" placeholder="mi.tienda">
                   </div>
                   <div class="form-group">
+                    <label>Facebook (usuario o link)</label>
+                    <input type="text" [(ngModel)]="settings.socialLinks.facebook" placeholder="mi.tienda">
+                  </div>
+                  <div class="form-group">
+                    <label>Twitter / X (@usuario)</label>
+                    <input type="text" [(ngModel)]="settings.socialLinks.twitter" placeholder="mi.tienda">
+                  </div>
+                  <div class="form-group">
                     <label>TikTok (@usuario)</label>
                     <input type="text" [(ngModel)]="settings.socialLinks.tiktok" placeholder="mi.tienda">
                   </div>
@@ -488,11 +517,6 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
           </div>
         </div>
       </div>
-
-      <!-- Toast Notification -->
-      <div class="toast" *ngIf="toast.visible" [class.toast-error]="toast.isError">
-        {{ toast.message }}
-      </div>
     </div>
   `,
   styles: [`
@@ -584,6 +608,66 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
       color: var(--primary);
     }
 
+    /* Toggle Buttons */
+    .btn-toggle-large {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: white;
+      color: #64748b;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-toggle-large.active {
+      border-color: #22c55e;
+      background: #f0fdf4;
+      color: #166534;
+    }
+    .btn-toggle-large:not(.active) {
+      border-color: #ef4444;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .btn-toggle-mini {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-toggle-mini.active {
+      background: #dcfce7;
+      color: #22c55e;
+      border-color: #bbf7d0;
+    }
+    .btn-toggle-mini:not(.active) {
+      background: #fee2e2;
+      color: #ef4444;
+      border-color: #fecaca;
+    }
+
+    .btn-delete-mini {
+      width: 32px;
+      height: 32px;
+      background: transparent !important;
+      color: #94a3b8 !important;
+      border: none !important;
+    }
+    .btn-delete-mini:hover { color: #ef4444 !important; }
+
     /* Tabs */
     .tabs-container {
       display: flex;
@@ -602,7 +686,8 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
     }
 
     .tab-btn {
-      padding: 10px 20px;
+      padding: 10px 20px !important;
+      min-height: unset !important;
       border-radius: 14px;
       border: none;
       background: transparent;
@@ -621,7 +706,8 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
     .preview-toggle {
       background: #f8fafc;
       border: 1px solid var(--border);
-      padding: 10px 20px;
+      padding: 10px 20px !important;
+      min-height: unset !important;
       border-radius: 14px;
       font-weight: 700;
       color: #64748b;
@@ -719,16 +805,6 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
       border-color: var(--accent);
     }
 
-    .admin-card-img {
-      height: 220px;
-      background: #f8fafc;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
     .admin-card-img img {
       max-width: 100%;
       max-height: 100%;
@@ -777,7 +853,11 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
       justify-content: center;
       cursor: pointer;
       transition: 0.2s;
+      padding: 0 !important;
+      min-height: unset !important;
+      overflow: visible;
     }
+    .btn-circle svg { display: block; flex-shrink: 0; }
 
     .btn-circle:hover {
       background: var(--primary);
@@ -924,8 +1004,8 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
     }
 
     .s-nav-item {
-      padding: 12px 16px;
-      border-radius: 12px;
+      padding: 14px 20px;
+      border-radius: 14px;
       border: none;
       background: transparent;
       color: #64748b;
@@ -935,11 +1015,29 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
       align-items: center;
       gap: 12px;
       cursor: pointer;
-      transition: 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
     }
 
-    .s-nav-item:hover { background: #f8fafc; color: var(--primary); }
-    .s-nav-item.active { background: var(--primary); color: white; }
+    .s-nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .s-nav-item:hover { 
+      background: #f1f5f9; 
+      color: var(--primary); 
+    }
+    
+    .s-nav-item.active { 
+      background: var(--primary); 
+      color: white; 
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    }
 
     .s-section {
       background: white;
@@ -1100,24 +1198,33 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
     .master-table th { background: #f8fafc; padding: 16px 24px; text-align: left; font-size: 0.8rem; font-weight: 800; color: #64748b; }
     .master-table td { padding: 16px 24px; border-top: 1px solid #f1f5f9; font-weight: 600; color: #334155; }
 
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 40px;
-      right: 40px;
-      padding: 16px 32px;
-      border-radius: 16px;
+    /* Integrated Toast Banner */
+    .toast-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: -10px;
+      margin-bottom: 30px;
+      width: 100%;
+      z-index: 2000;
+      animation: toastSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast-pill {
       background: #0f172a;
       color: white;
-      font-weight: 700;
-      box-shadow: var(--shadow-lg);
-      z-index: 10000;
-      animation: toastIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 14px 45px;
+      border-radius: 100px;
+      font-weight: 750;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+      font-size: 1rem;
+      border: 1px solid rgba(255,255,255,0.1);
     }
-
-    @keyframes toastIn {
-      from { transform: translateY(100px) scale(0.9); opacity: 0; }
-      to { transform: translateY(0) scale(1); opacity: 1; }
+    .toast-error {
+      background: #ef4444;
+      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.2);
+    }
+    @keyframes toastSlideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     @media (max-width: 1024px) {
@@ -1127,7 +1234,7 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
     }
   `]
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnInit, OnDestroy {
   activeTab: 'products' | 'settings' | 'master' = 'products';
   products: Product[] = [];
   searchTerm = '';
@@ -1147,6 +1254,7 @@ export class AdminComponent implements OnInit {
   private adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com'];
   toast = { visible: false, message: '', isError: false };
   private toastTimer: any;
+  private _subs = new Subscription();
   fontOptions = [
     { name: 'Inter (Moderna)', value: "'Inter', sans-serif" },
     { name: 'Montserrat (Geométrica)', value: "'Montserrat', sans-serif" },
@@ -1176,7 +1284,6 @@ export class AdminComponent implements OnInit {
     
     return filtered;
   }
-  
   activeSettingsSection: 'general' | 'colors' | 'hero' | 'social' = 'general';
   isPreviewActive = true;
   
@@ -1194,8 +1301,7 @@ export class AdminComponent implements OnInit {
   private isLoaded = false;
 
   ngOnInit() {
-    // Escuchar la sesión de forma reactiva
-    this.authService.currentSession$.subscribe(session => {
+    this._subs.add(this.authService.currentSession$.subscribe(session => {
       if (session && !this.isLoaded) {
         this.isLoaded = true;
         this.checkSuperAdmin(session.user?.email);
@@ -1205,7 +1311,12 @@ export class AdminComponent implements OnInit {
           this.loadMasterData();
         }
       }
-    });
+    }));
+  }
+
+  ngOnDestroy() {
+    this._subs.unsubscribe();
+    clearTimeout(this.toastTimer);
   }
 
   checkSuperAdmin(email?: string) {
@@ -1357,13 +1468,14 @@ export class AdminComponent implements OnInit {
         this.showToast('El slug de la tienda es obligatorio', true);
         return;
       }
+      // Slugify: lowercase, remove accents, remove non-alphanumeric
 
       const payload: any = {};
       const fields = [
         'businessName', 'logoUrl', 'primaryColor', 'secondaryColor', 
         'accentColor', 'backgroundColor', 'whatsappNumber', 'welcomeMessage', 
         'slug', 'description', 'heroSlides', 'fontFamily', 
-        'navbarStyle', 'cardStyle', 'socialLinks'
+        'navbarStyle', 'cardStyle', 'socialLinks', 'deliveryFee'
       ];
 
       fields.forEach(field => {
@@ -1431,7 +1543,7 @@ export class AdminComponent implements OnInit {
     if (file) {
       this.dataService.uploadImage(file).subscribe({
         next: (res) => { this.currentProduct.imageUrl = res.url; this.showToast('Imagen del producto subida'); },
-        error: () => this.showToast('Error al subir la imagen del producto', true)
+        error: () => this.showToast('Error al subir la imagen del producto y variante', true)
       });
     }
   }

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { SupabaseService } from '../supabase/supabase.service';
+import { slugify } from '../utils/slugify';
 
 @Injectable()
 export class SettingsService {
@@ -36,7 +37,7 @@ export class SettingsService {
     if (error && error.code === 'PGRST116') {
       const { data: userResponse } = await this.supabase.adminClient.auth.admin?.getUserById(storeId) || { data: null };
       const email = userResponse?.user?.email || `tienda-${Math.floor(Math.random()*1000)}`;
-      const defaultSlug = email.split('@')[0] + '-' + Math.floor(Math.random() * 100);
+      const defaultSlug = slugify(email.split('@')[0]) + '-' + Math.floor(Math.random() * 100);
 
       const { error: storeError } = await this.supabase.adminClient.from('Stores').upsert([{
         id: storeId,
@@ -76,16 +77,17 @@ export class SettingsService {
   async update(updateSettingDto: UpdateSettingDto & { slug?: string }, storeId: string) {
     const { id: _, createdAt: __, slug, ...cleanData } = updateSettingDto as any;
     
-    // Si se envía el slug, actualizarlo en la tabla Stores
+    // Si se envía el slug, sanitizarlo y actualizarlo en la tabla Stores
     if (slug) {
+      const cleanSlug = slugify(slug);
       const { error: storeError } = await this.supabase.adminClient
         .from('Stores')
-        .update({ slug })
+        .update({ slug: cleanSlug })
         .eq('id', storeId);
       
       if (storeError) {
         // Podría fallar si el slug ya existe (violación de restricción única)
-        throw new Error('No se pudo actualizar el nombre de la URL. Es posible que ya esté en uso.');
+        throw new Error('El nombre de la URL ya está en uso por otra tienda. Elige uno diferente.');
       }
     }
 

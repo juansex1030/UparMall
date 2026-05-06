@@ -19,7 +19,8 @@ async function runMigrations() {
       "ALTER TABLE \"Settings\" ADD COLUMN IF NOT EXISTS \"navbarStyle\" text DEFAULT 'glass';",
       "ALTER TABLE \"Settings\" ADD COLUMN IF NOT EXISTS \"cardStyle\" text DEFAULT 'elevated';",
       "ALTER TABLE \"Settings\" ADD COLUMN IF NOT EXISTS \"socialLinks\" jsonb DEFAULT '{\"instagram\": \"\", \"facebook\": \"\", \"tiktok\": \"\"}'::jsonb;",
-      "ALTER TABLE \"Settings\" ADD COLUMN IF NOT EXISTS \"accentColor\" text DEFAULT '#6366f1';"
+      "ALTER TABLE \"Settings\" ADD COLUMN IF NOT EXISTS \"accentColor\" text DEFAULT '#6366f1';",
+      "ALTER TABLE \"Settings\" ADD COLUMN IF NOT EXISTS \"deliveryFee\" numeric DEFAULT 0;"
     ];
 
     for (let query of queries) {

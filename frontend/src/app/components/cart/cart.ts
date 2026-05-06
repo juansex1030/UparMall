@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { CartService } from '../../services/cart.service';
-import { DataService } from '../../services/data.service';
-import { CartItem, Settings } from '../../models/models';
+import { CartService } from '@shared/services/cart.service';
+import { DataService } from '@shared/services/data.service';
+import { CartItem, Settings } from '@shared/models/models';
 import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } from '@lucide/angular';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
@@ -27,15 +28,15 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
 
         <div class="cart-items" *ngIf="items.length > 0">
           <div class="cart-item" *ngFor="let item of items">
-            <img [src]="item.product.imageUrl || 'https://via.placeholder.com/80'" class="item-img">
+            <img [src]="getItemImage(item)" class="item-img">
             <div class="item-details">
               <h4>{{ item.product.name }}</h4>
-              <p class="item-variants" *ngIf="item.selectedOptions">
-                <span *ngFor="let opt of item.selectedOptions | keyvalue">
-                  {{ opt.key }}: {{ $any(opt.value).label }}
+              <p class="item-variants" *ngIf="item.selectedOptions && getOptionsKeys(item.selectedOptions).length">
+                <span *ngFor="let key of getOptionsKeys(item.selectedOptions)">
+                  {{ key }}: {{ item.selectedOptions[key]?.label }}
                 </span>
               </p>
-              <p class="item-price">$ {{ item.product.price | number }}</p>
+              <p class="item-price">$ {{ getItemUnitPrice(item) | number }}</p>
             </div>
             <div class="quantity-controls">
               <button (click)="updateQty(item.product.id, item.quantity - 1, item.selectedOptions)"><svg lucideMinus size="16"></svg></button>
@@ -58,7 +59,7 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
               </label>
               <label class="radio-label" [class.selected]="deliveryMethod === 'delivery'">
                 <input type="radio" name="delivery" value="delivery" [(ngModel)]="deliveryMethod">
-                <span>Domicilio (+$6,000)</span>
+                <span>Domicilio ({{ deliveryFee > 0 ? '+$' + (deliveryFee | number) : '¡Gratis!' }})</span>
               </label>
             </div>
           </div>
@@ -150,7 +151,7 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
   styles: [`
     .cart-container { padding: 20px 0; }
     .cart-nav { margin-bottom: 15px; }
-    .back-link { background: transparent; color: var(--text-light); display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 0; }
+    .back-link { background: transparent; color: var(--text-light); display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 0 !important; min-height: unset !important; }
     .back-link:hover { color: var(--primary-color); }
     .cart-content { padding: 30px; }
     h2 { margin-bottom: 25px; text-align: center; }
@@ -162,8 +163,8 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
     .item-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
     .item-details { flex-grow: 1; }
     .quantity-controls { display: flex; align-items: center; gap: 10px; }
-    .quantity-controls button { width: 32px; height: 32px; padding: 0; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .remove-btn { color: #ff5252; background: transparent; padding: 0; min-height: auto; }
+    .quantity-controls button { width: 32px; height: 32px; padding: 0 !important; min-height: unset !important; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: visible; }
+    .remove-btn { color: #ff5252; background: transparent; padding: 0 !important; min-height: unset !important; overflow: visible; }
     .cart-footer { margin-top: 30px; border-top: 2px solid rgba(0,0,0,0.1); padding-top: 20px; padding-bottom: 40px; }
     
     .delivery-options { margin-bottom: 25px; }
@@ -179,9 +180,9 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
     .payment-section { margin-top: 30px; }
     .payment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .payment-pill {
-      background: white; border: 2px solid #eee; padding: 15px 5px; border-radius: 12px;
+      background: white; border: 2px solid #eee; padding: 15px 5px !important; border-radius: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 8px;
-      cursor: pointer; transition: all 0.2s ease;
+      cursor: pointer; transition: all 0.2s ease; min-height: unset !important;
     }
     .payment-pill.active { border-color: var(--primary-color); background: rgba(var(--primary-color-rgb), 0.05); }
     .payment-icon { font-size: 1.5rem; }
@@ -197,6 +198,7 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
       width: 100%; background: #25d366; color: white; font-size: 1.1rem; height: 56px;
       box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); border-radius: 12px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 0 !important; min-height: unset !important;
     }
     .whatsapp-btn:hover { background: #20bd5a; transform: translateY(-2px); }
     .whatsapp-btn:disabled { background: #ccc; opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -223,18 +225,19 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
     }
   `]
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   items: CartItem[] = [];
   totalPrice = 0;
   settings: Settings | null = null;
   storeSlug: string = '';
 
   deliveryMethod: 'pickup' | 'delivery' = 'pickup';
-  deliveryFee = 6000;
+  deliveryFee = 0;
   shippingInfo = { name: '', address: '', neighborhood: '', phone: '' };
   pickupName = '';
   paymentMethod: 'efectivo' | 'transferencia' | 'contraentrega' = 'efectivo';
   isSending = false;
+  private _subs = new Subscription();
 
   get finalTotal() {
     return this.totalPrice + (this.deliveryMethod === 'delivery' ? this.deliveryFee : 0);
@@ -248,7 +251,7 @@ export class CartComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
+    this._subs.add(this.route.paramMap.subscribe(params => {
       const slug = params.get('slug');
       if (!slug) {
         this.router.navigate(['/']);
@@ -259,8 +262,8 @@ export class CartComponent implements OnInit {
       this.dataService.getSettingsBySlug(slug).subscribe({
         next: (settings) => {
           this.settings = settings;
+          this.deliveryFee = settings.deliveryFee || 0;
           if (settings.primaryColor) {
-            // Extraer RGB para el fondo transparente del radio button
             const hex = settings.primaryColor.replace('#', '');
             const r = parseInt(hex.substring(0, 2), 16);
             const g = parseInt(hex.substring(2, 4), 16);
@@ -271,16 +274,32 @@ export class CartComponent implements OnInit {
         },
         error: (err) => console.error('Error cargando settings del carrito', err)
       });
-    });
+    }));
 
-    this.cartService.cartItems$.subscribe(items => {
+    this._subs.add(this.cartService.cartItems$.subscribe(items => {
       this.items = items;
       this.totalPrice = this.cartService.getTotalPrice();
-    });
+    }));
+  }
+
+  ngOnDestroy() {
+    this._subs.unsubscribe();
   }
 
   getOptionsKey(options: any): string {
-    return JSON.stringify(options || {});
+    return this.cartService.getOptionsKey(options);
+  }
+
+  getOptionsKeys(options: any): string[] {
+    return Object.keys(options || {});
+  }
+
+  getItemUnitPrice(item: CartItem): number {
+    return this.cartService.getItemUnitPrice(item);
+  }
+
+  getItemImage(item: CartItem): string {
+    return this.cartService.getItemImage(item);
   }
 
   updateQty(id: number, qty: number, options: any = {}) {
@@ -315,7 +334,9 @@ export class CartComponent implements OnInit {
       this.deliveryMethod === 'pickup' ? this.pickupName : undefined
     );
     if (link) {
-      window.open(link, '_blank');
+      // Use location.href instead of window.open to avoid popup blockers on mobile
+      this.cartService.clearCart();
+      window.location.href = link;
     }
     setTimeout(() => this.isSending = false, 3000);
   }

@@ -4,13 +4,13 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { DataService } from '../../services/data.service';
 import { CartService } from '../../services/cart.service';
 import { Product, Settings } from '../../models/models';
-import { LucideShoppingCart, LucidePlus, LucideX } from '@lucide/angular';
+import { LucideShoppingCart, LucidePlus, LucideX, LucideCheck } from '@lucide/angular';
 import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, LucideShoppingCart, LucidePlus, LucideX],
+  imports: [CommonModule, LucideShoppingCart, LucidePlus, LucideX, LucideCheck],
   template: `
     <div class="catalog-container container" [ngStyle]="getBackgroundStyle()">
       <header class="header glass" *ngIf="settings">
@@ -21,7 +21,7 @@ import { catchError, of } from 'rxjs';
             <p class="store-description" *ngIf="settings.description">{{ settings.description }}</p>
           </div>
         </div>
-        <button class="cart-btn" (click)="toggleCart()">
+        <button class="cart-btn" (click)="toggleCart()" [class.cart-pulse]="isCartAnimating">
           <svg lucideShoppingCart size="24"></svg>
           <span class="badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
         </button>
@@ -47,10 +47,16 @@ import { catchError, of } from 'rxjs';
             <p class="description">{{ product.description }}</p>
             <div class="price-row">
               <span class="price">$ {{ product.price | number }}</span>
-              <button class="add-btn" (click)="onAddClick(product)">
-                <svg lucidePlus size="18"></svg>
-                {{ product.variants?.length ? 'Ver Opciones' : 'Agregar' }}
-              </button>
+              <div class="button-group">
+                <button class="view-btn" (click)="onAddClick(product)">
+                  Detalles
+                </button>
+                <button class="add-btn" (click)="onQuickAdd(product, $event)" [class.success]="justAddedId === product.id">
+                  <svg *ngIf="justAddedId !== product.id" lucidePlus size="18"></svg>
+                  <svg *ngIf="justAddedId === product.id" lucideCheck size="18"></svg>
+                  {{ justAddedId === product.id ? 'Añadido' : 'Agregar' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -67,6 +73,17 @@ import { catchError, of } from 'rxjs';
           <div class="modal-body">
             <div class="modal-preview-image" *ngIf="selectedProduct">
               <img [src]="getDisplayImage()" class="main-preview">
+            </div>
+
+            <!-- Technical Specifications Section -->
+            <div class="specs-section" *ngIf="selectedProduct.specifications?.length">
+              <h4>Especificaciones Técnicas</h4>
+              <div class="specs-table glass">
+                <div class="spec-item" *ngFor="let spec of selectedProduct.specifications">
+                  <span class="spec-key">{{ spec.key }}</span>
+                  <span class="spec-value">{{ spec.value }}</span>
+                </div>
+              </div>
             </div>
             
             <div class="variant-item" *ngFor="let variant of selectedProduct.variants">
@@ -118,12 +135,19 @@ import { catchError, of } from 'rxjs';
       border-radius: 50%; width: 48px; height: 48px; padding: 0; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center; margin-top: 5px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: visible !important;
     }
     .badge {
-      position: absolute; top: -3px; right: -3px; background: var(--secondary-color);
-      color: white; border-radius: 50%; min-width: 20px; height: 20px; 
+      position: absolute; top: -5px; right: -5px; background: #ff3b30;
+      color: white; border-radius: 50%; min-width: 22px; height: 22px; 
       display: flex; align-items: center; justify-content: center;
-      padding: 0 4px; font-size: 0.7rem; font-weight: 700; border: 2px solid white;
+      padding: 0 4px; font-size: 0.75rem; font-weight: 800; border: 2px solid white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes badgePop {
+      0% { transform: scale(0.5); }
+      100% { transform: scale(1); }
     }
     .product-card {
       overflow: hidden; display: flex; flex-direction: column; height: 100%;
@@ -135,7 +159,10 @@ import { catchError, of } from 'rxjs';
     .description { color: var(--text-light); font-size: 0.85rem; margin-bottom: 12px; flex-grow: 1; line-height: 1.4; }
     .price-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .price { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); white-space: nowrap; }
-    .add-btn { background: var(--primary-color); color: white; font-size: 0.85rem; padding: 8px 12px; height: auto; }
+    .button-group { display: flex; gap: 8px; flex-grow: 1; justify-content: flex-end; }
+    .add-btn { background: var(--primary-color); color: white; font-size: 0.85rem; padding: 8px 12px; height: auto; flex-grow: 1; }
+    .view-btn { background: #f1f3f5; color: #495057; font-size: 0.85rem; padding: 8px 12px; border-radius: 12px; font-weight: 600; flex-grow: 1; }
+    .view-btn:hover { background: #e9ecef; }
     
     .categories-bar { display: flex; gap: 10px; overflow-x: auto; padding: 0 20px 15px; margin-top: -5px; scrollbar-width: none; }
     .categories-bar::-webkit-scrollbar { display: none; }
@@ -194,6 +221,17 @@ import { catchError, of } from 'rxjs';
     
     .confirm-btn { width: 100%; background: var(--primary-color); color: white; padding: 18px; border-radius: 16px; font-weight: 700; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .confirm-btn:disabled { background: #e0e0e0; color: #999; cursor: not-allowed; box-shadow: none; }
+
+    .add-btn.success { background: #2ecc71 !important; }
+
+    /* Specs in Modal */
+    .specs-section { margin-bottom: 25px; }
+    .specs-section h4 { margin-bottom: 12px; color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .specs-table { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; border: 1px solid #eee; }
+    .spec-item { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #f1f1f1; font-size: 0.95rem; }
+    .spec-item:last-child { border-bottom: none; }
+    .spec-key { color: #888; font-weight: 500; }
+    .spec-value { color: #333; font-weight: 700; text-align: right; }
   `]
 })
 export class CatalogComponent implements OnInit {
@@ -203,6 +241,8 @@ export class CatalogComponent implements OnInit {
   activeCategory: string = 'Todos';
   settings: Settings | null = null;
   cartCount = 0;
+  isCartAnimating = false;
+  justAddedId: number | null = null;
 
   storeSlug: string = '';
 
@@ -304,12 +344,54 @@ export class CatalogComponent implements OnInit {
   }
 
   onAddClick(product: Product) {
-    if (product.variants && product.variants.length > 0) {
+    if ((product.variants && product.variants.length > 0) || (product.specifications && product.specifications.length > 0)) {
       this.selectedProduct = product;
       this.tempOptions = {};
     } else {
-      this.addToCart(product);
+      this.onQuickAdd(product);
     }
+  }
+
+  onQuickAdd(product: Product, event?: MouseEvent) {
+    this.addToCart(product);
+    if (event) {
+      this.triggerFlyAnimation(event);
+    }
+    
+    this.justAddedId = product.id;
+    setTimeout(() => this.justAddedId = null, 1500);
+  }
+
+  triggerFlyAnimation(event: MouseEvent) {
+    const startX = event.clientX;
+    const startY = event.clientY;
+    
+    const cartBtn = document.querySelector('.cart-btn');
+    if (!cartBtn) return;
+    
+    const rect = cartBtn.getBoundingClientRect();
+    const endX = rect.left + rect.width / 2;
+    const endY = rect.top + rect.height / 2;
+    
+    const particle = document.createElement('div');
+    particle.className = 'fly-particle';
+    particle.style.left = `${startX}px`;
+    particle.style.top = `${startY}px`;
+    document.body.appendChild(particle);
+    
+    const animation = particle.animate([
+      { left: `${startX}px`, top: `${startY}px`, transform: 'scale(1)', opacity: 1 },
+      { left: `${endX}px`, top: `${endY}px`, transform: 'scale(0.2)', opacity: 0 }
+    ], {
+      duration: 600,
+      easing: 'cubic-bezier(0.42, 0, 0.58, 1)'
+    });
+    
+    animation.onfinish = () => {
+      particle.remove();
+      this.isCartAnimating = true;
+      setTimeout(() => this.isCartAnimating = false, 400);
+    };
   }
 
   selectOption(variantName: string, option: any) {

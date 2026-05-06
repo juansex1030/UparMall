@@ -58,6 +58,29 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
             </div>
           </div>
 
+          <!-- Shipping Info Form (Only for delivery) -->
+          <div class="shipping-form" *ngIf="deliveryMethod === 'delivery'">
+            <h4>Datos de Envío</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nombre de quien recibe</label>
+                <input type="text" [(ngModel)]="shippingInfo.name" placeholder="Ej: Juan Pérez">
+              </div>
+              <div class="form-group">
+                <label>Número de contacto</label>
+                <input type="tel" [(ngModel)]="shippingInfo.phone" placeholder="Ej: 300 123 4567">
+              </div>
+              <div class="form-group full-width">
+                <label>Dirección completa</label>
+                <input type="text" [(ngModel)]="shippingInfo.address" placeholder="Ej: Calle 123 #45-67">
+              </div>
+              <div class="form-group full-width">
+                <label>Barrio / Edificio / Apto</label>
+                <input type="text" [(ngModel)]="shippingInfo.neighborhood" placeholder="Ej: Barrio El Prado, Apto 402">
+              </div>
+            </div>
+          </div>
+
           <div class="summary-box">
             <div class="summary-row">
               <span>Subtotal:</span>
@@ -73,7 +96,7 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
             </div>
           </div>
           
-          <button class="whatsapp-btn" (click)="sendOrder()">
+          <button class="whatsapp-btn" (click)="sendOrder()" [disabled]="(deliveryMethod === 'delivery' && !isShippingValid()) || isSending">
             <svg lucideSend size="20"></svg>
             Enviar Pedido por WhatsApp
           </button>
@@ -120,6 +143,25 @@ import { LucideTrash2, LucidePlus, LucideMinus, LucideSend, LucideArrowLeft } fr
       box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); border-radius: 12px; font-weight: 700;
     }
     .whatsapp-btn:hover { background: #20bd5a; transform: translateY(-2px); }
+    .whatsapp-btn:disabled { background: #ccc; opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Shipping Form */
+    .shipping-form { margin-bottom: 25px; padding: 20px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); }
+    .shipping-form h4 { margin-bottom: 15px; color: #333; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full-width { grid-column: span 2; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: #666; }
+    .form-group input { 
+      padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: white;
+      font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--primary-color); outline: none; }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+    }
   `]
 })
 export class CartComponent implements OnInit {
@@ -130,6 +172,8 @@ export class CartComponent implements OnInit {
 
   deliveryMethod: 'pickup' | 'delivery' = 'pickup';
   deliveryFee = 6000;
+  shippingInfo = { name: '', address: '', neighborhood: '', phone: '' };
+  isSending = false;
 
   get finalTotal() {
     return this.totalPrice + (this.deliveryMethod === 'delivery' ? this.deliveryFee : 0);
@@ -182,13 +226,23 @@ export class CartComponent implements OnInit {
     this.cartService.removeFromCart(id);
   }
 
+  isShippingValid(): boolean {
+    return !!(this.shippingInfo.name && this.shippingInfo.address && this.shippingInfo.neighborhood && this.shippingInfo.phone);
+  }
+
   sendOrder() {
-    if (this.settings) {
-      const link = this.cartService.generateWhatsAppLink(this.settings, this.deliveryMethod, this.deliveryFee);
-      if (link) {
-        window.open(link, '_blank');
-      }
+    if (this.isSending || !this.settings) return;
+    this.isSending = true;
+    const link = this.cartService.generateWhatsAppLink(
+      this.settings,
+      this.deliveryMethod,
+      this.deliveryFee,
+      this.deliveryMethod === 'delivery' ? this.shippingInfo : undefined
+    );
+    if (link) {
+      window.open(link, '_blank');
     }
+    setTimeout(() => this.isSending = false, 3000);
   }
 
   goBack() {

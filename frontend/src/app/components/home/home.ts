@@ -33,8 +33,8 @@ import { AuthService } from '../../services/auth.service';
               <label>Contraseña</label>
               <input type="password" [(ngModel)]="password" name="password" required>
             </div>
+            <div class="msg error" *ngIf="errorMsg">{{ errorMsg }}</div>
             <button type="button" class="forgot-link" (click)="mode = 'forgot'">¿Olvidaste tu contraseña?</button>
-            
             <button type="submit" class="submit-btn" [disabled]="loading">
               {{ loading ? 'Cargando...' : 'Iniciar Sesión' }}
             </button>
@@ -50,6 +50,8 @@ import { AuthService } from '../../services/auth.service';
               <label>Contraseña (mínimo 6 caracteres)</label>
               <input type="password" [(ngModel)]="password" name="password" required>
             </div>
+            <div class="msg error" *ngIf="errorMsg">{{ errorMsg }}</div>
+            <div class="msg success" *ngIf="successMsg">{{ successMsg }}</div>
             <button type="submit" class="submit-btn" [disabled]="loading">
               {{ loading ? 'Creando tienda...' : 'Registrarse' }}
             </button>
@@ -64,6 +66,8 @@ import { AuthService } from '../../services/auth.service';
               <label>Correo Electrónico</label>
               <input type="email" [(ngModel)]="email" name="email" required>
             </div>
+            <div class="msg error" *ngIf="errorMsg">{{ errorMsg }}</div>
+            <div class="msg success" *ngIf="successMsg">{{ successMsg }}</div>
             <button type="submit" class="submit-btn" [disabled]="loading">
               {{ loading ? 'Enviando...' : 'Enviar Enlace' }}
             </button>
@@ -126,6 +130,9 @@ import { AuthService } from '../../services/auth.service';
     
     .forgot-link { background: transparent; border: none; color: #3f51b5; padding: 0; font-size: 0.85rem; cursor: pointer; margin-bottom: 15px; text-decoration: underline; }
     .hint { font-size: 0.85rem; color: #666; text-align: center; margin-top: 15px; line-height: 1.4; }
+    .msg { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; }
+    .msg.error { background: #fff0f0; color: #e74c3c; border: 1px solid #f5c6cb; }
+    .msg.success { background: #f0fff4; color: #27ae60; border: 1px solid #c3e6cb; }
   `]
 })
 export class HomeComponent {
@@ -133,88 +140,76 @@ export class HomeComponent {
   email = '';
   password = '';
   loading = false;
+  errorMsg = '';
+  successMsg = '';
+
+  private setMode(m: typeof this.mode) {
+    this.mode = m;
+    this.errorMsg = '';
+    this.successMsg = '';
+  }
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {
-    // Detect if user arrived from a password recovery link
     this.authService.authEvent$.subscribe(event => {
-      if (event === 'PASSWORD_RECOVERY') {
-        this.mode = 'update-password';
-      }
+      if (event === 'PASSWORD_RECOVERY') this.setMode('update-password');
     });
   }
 
   async onLogin() {
-    if (!this.email || !this.password) {
-      alert('Por favor ingresa todos los campos');
-      return;
-    }
-    
+    this.errorMsg = '';
+    if (!this.email || !this.password) { this.errorMsg = 'Por favor ingresa todos los campos'; return; }
     this.loading = true;
-    try {
-      const { data, error } = await this.authService.signIn(this.email, this.password);
-      
-      if (error) {
-        alert('Correo o contraseña incorrectos. Inténtalo de nuevo.');
-        this.loading = false;
-        return;
-      }
-      
-      if (data?.session) {
-        this.router.navigate(['/admin']);
-      }
-    } catch (err: any) {
-      console.error('Login error:', err);
-      alert('Ocurrió un error inesperado al iniciar sesión.');
-    } finally {
-      this.loading = false;
-    }
+    const { data, error } = await this.authService.signIn(this.email, this.password);
+    this.loading = false;
+    if (error) { this.errorMsg = 'Correo o contraseña incorrectos'; return; }
+    if (data?.session) this.router.navigate(['/admin']);
   }
 
   async onRegister() {
-    if (!this.email || !this.password) return alert('Por favor ingresa todos los campos');
-    if (this.password.length < 6) return alert('La contraseña debe tener al menos 6 caracteres');
-    
+    this.errorMsg = ''; this.successMsg = '';
+    if (!this.email || !this.password) { this.errorMsg = 'Por favor ingresa todos los campos'; return; }
+    if (this.password.length < 6) { this.errorMsg = 'La contraseña debe tener al menos 6 caracteres'; return; }
     this.loading = true;
     try {
       const { error } = await this.authService.signUp(this.email, this.password);
       if (error) throw error;
-      alert('¡Registro exitoso! Por favor revisa tu correo para confirmar tu cuenta (si tienes habilitada la confirmación) o inicia sesión.');
-      this.mode = 'login';
+      this.successMsg = '¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.';
+      this.email = ''; this.password = '';
     } catch (err: any) {
-      alert(err.message || 'Error al registrar');
+      this.errorMsg = err.message || 'Error al registrar';
     } finally {
       this.loading = false;
     }
   }
 
   async onForgotPassword() {
-    if (!this.email) return alert('Por favor ingresa tu correo electrónico');
+    this.errorMsg = ''; this.successMsg = '';
+    if (!this.email) { this.errorMsg = 'Por favor ingresa tu correo electrónico'; return; }
     this.loading = true;
     try {
       const { error } = await this.authService.resetPassword(this.email);
       if (error) throw error;
-      alert('Se ha enviado un enlace de recuperación a tu correo electrónico. Revisa tu bandeja de entrada o spam.');
-      this.mode = 'login';
+      this.successMsg = 'Enlace de recuperación enviado. Revisa tu bandeja o spam.';
     } catch (err: any) {
-      alert(err.message || 'Error al solicitar el cambio de contraseña');
+      this.errorMsg = err.message || 'Error al solicitar el cambio de contraseña';
     } finally {
       this.loading = false;
     }
   }
 
   async onUpdatePassword() {
-    if (!this.password || this.password.length < 6) return alert('La contraseña debe tener al menos 6 caracteres');
+    this.errorMsg = '';
+    if (!this.password || this.password.length < 6) { this.errorMsg = 'La contraseña debe tener al menos 6 caracteres'; return; }
     this.loading = true;
     try {
       const { error } = await this.authService.updatePassword(this.password);
       if (error) throw error;
-      alert('¡Contraseña actualizada con éxito!');
       this.router.navigate(['/admin']);
     } catch (err: any) {
-      alert(err.message || 'Error al actualizar contraseña');
+      this.errorMsg = err.message || 'Error al actualizar contraseña';
     } finally {
       this.loading = false;
     }

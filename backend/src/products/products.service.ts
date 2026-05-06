@@ -16,6 +16,7 @@ export class ProductsService {
       storeId,
       isActive: createProductDto.isActive ?? true,
       category: createProductDto.category ?? 'General',
+      specifications: createProductDto.specifications ?? [],
       createdAt: now,
       updatedAt: now
     };
@@ -26,10 +27,7 @@ export class ProductsService {
       .select()
       .single();
 
-    if (error) {
-      console.error('Error de Supabase al crear producto:', error);
-      throw error;
-    }
+    if (error) throw error;
     return data;
   }
 
@@ -42,10 +40,7 @@ export class ProductsService {
 
     const { data, error } = await query;
 
-    if (error) {
-      console.error('Error de Supabase en findAll:', error);
-      throw error;
-    }
+    if (error) throw error;
     return data;
   }
 
@@ -80,14 +75,16 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto, storeId: string) {
-    
-    // Eliminar campos que NO deben actualizarse manualmente o que pueden causar conflicto
-    const { id: _, createdAt: __, ...cleanData } = updateProductDto as any;
-    
-    const payload = {
-      ...cleanData,
-      updatedAt: new Date().toISOString()
-    };
+    const payload: any = { updatedAt: new Date().toISOString() };
+
+    if (updateProductDto.name !== undefined)           payload.name = updateProductDto.name;
+    if (updateProductDto.description !== undefined)    payload.description = updateProductDto.description;
+    if (updateProductDto.price !== undefined)          payload.price = updateProductDto.price;
+    if (updateProductDto.imageUrl !== undefined)       payload.imageUrl = updateProductDto.imageUrl;
+    if (updateProductDto.category !== undefined)       payload.category = updateProductDto.category;
+    if (updateProductDto.isActive !== undefined)       payload.isActive = updateProductDto.isActive;
+    if (updateProductDto.variants !== undefined)       payload.variants = updateProductDto.variants;
+    if (updateProductDto.specifications !== undefined) payload.specifications = updateProductDto.specifications;
 
     const { data, error } = await this.supabase.client
       .from('Product')
@@ -97,10 +94,7 @@ export class ProductsService {
       .select()
       .single();
 
-    if (error) {
-      console.error('Error de Supabase al actualizar producto:', error);
-      throw error;
-    }
+    if (error) throw error;
     return data;
   }
 

@@ -37,25 +37,18 @@ export class SettingsService implements OnModuleInit {
       .eq('storeId', storeId)
       .single();
 
-    if (error && error.code === 'PGRST116') { // No rows found
-      console.log('Creando tienda y settings por defecto para el nuevo usuario...');
-      
-      // Intentar obtener el email del usuario para crear un slug temporal
+    if (error && error.code === 'PGRST116') {
       const { data: userResponse } = await this.supabase.client.auth.admin?.getUserById(storeId) || { data: null };
       const email = userResponse?.user?.email || `tienda-${Math.floor(Math.random()*1000)}`;
       const defaultSlug = email.split('@')[0] + '-' + Math.floor(Math.random() * 100);
 
-      // Crear Store (usando upsert por si ya existe pero Settings falló previamente)
       const { error: storeError } = await this.supabase.client.from('Stores').upsert([{
         id: storeId,
         slug: defaultSlug,
-        ownerName: email // usando el email temporalmente como nombre
+        ownerName: email
       }], { onConflict: 'id' });
 
-      if (storeError) {
-        console.error('Error creando Store:', storeError);
-        throw storeError;
-      }
+      if (storeError) throw storeError;
 
       // Crear Settings
       const { data: newSettings, error: insertError } = await this.supabase.client.from('Settings').upsert([{

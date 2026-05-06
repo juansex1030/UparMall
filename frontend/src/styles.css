@@ -36,19 +36,89 @@ button {
   border: none;
   outline: none;
   font-family: inherit;
-  transition: var(--transition);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px; /* Touch friendly */
-  padding: 0 20px;
+  min-height: 44px;
+  padding: 0 24px;
   border-radius: 12px;
   font-weight: 600;
+  position: relative;
+  overflow: hidden;
 }
 
-button:active {
-  transform: scale(0.95);
+/* Primary Button - High Contrast & Depth */
+.btn-primary, .save-btn, .add-btn, .checkout-btn, .login-btn {
+  background: linear-gradient(135deg, var(--primary-color), #ff6b81);
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(255, 64, 129, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary:hover, .save-btn:hover, .add-btn:hover, .checkout-btn:hover, .login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 64, 129, 0.4);
+  filter: brightness(1.05);
+}
+
+.btn-primary:active, .save-btn:active, .add-btn:active, .checkout-btn:active, .login-btn:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 2px 8px rgba(255, 64, 129, 0.2);
+}
+
+/* Secondary Button - Subtle Depth */
+.btn-secondary, .cancel-btn, .retry-btn, .back-btn {
+  background: #f1f3f5;
+  color: #495057;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.btn-secondary:hover, .cancel-btn:hover, .retry-btn:hover, .back-btn:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.btn-secondary:active, .cancel-btn:active, .retry-btn:active, .back-btn:active {
+  transform: scale(0.98);
+}
+
+/* Success Button - WhatsApp/Done */
+.btn-success, .send-wa-btn {
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.btn-success:hover, .send-wa-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+}
+
+/* Ripple Effect Animation */
+button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+button:active::after {
+  animation: ripple 0.4s ease-out;
+}
+
+@keyframes ripple {
+  0% { transform: scale(0, 0); opacity: 0.5; }
+  100% { transform: scale(40, 40); opacity: 0; }
 }
 
 .container {
@@ -100,4 +170,29 @@ button:active {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #999;
+}
+
+/* Cart Animations */
+@keyframes cartBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.cart-pulse {
+  animation: cartBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.fly-particle {
+  position: fixed;
+  width: 35px;
+  height: 35px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 0 20px var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
 }

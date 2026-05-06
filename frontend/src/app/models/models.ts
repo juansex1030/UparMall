@@ -7,6 +7,12 @@ export interface Product {
   category?: string;
   isActive: boolean;
   variants?: ProductVariant[];
+  specifications?: ProductSpecification[];
+}
+
+export interface ProductSpecification {
+  key: string;   // Ej: "Memoria RAM"
+  value: string; // Ej: "8GB"
 }
 
 export interface ProductVariant {

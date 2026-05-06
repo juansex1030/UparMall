@@ -9,6 +9,25 @@ export class CartService {
   private cartItems = new BehaviorSubject<CartItem[]>([]);
   cartItems$ = this.cartItems.asObservable();
 
+  constructor() {
+    this.loadCart();
+  }
+
+  private saveCart(items: CartItem[]) {
+    localStorage.setItem('uparmall_cart', JSON.stringify(items));
+  }
+
+  private loadCart() {
+    const saved = localStorage.getItem('uparmall_cart');
+    if (saved) {
+      try {
+        this.cartItems.next(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error cargando el carrito persistido', e);
+      }
+    }
+  }
+
   addToCart(product: Product, selectedOptions?: { [key: string]: any }) {
     const currentItems = this.cartItems.value;
     
@@ -25,6 +44,7 @@ export class CartService {
     } else {
       this.cartItems.next([...currentItems, { product, quantity: 1, selectedOptions }]);
     }
+    this.saveCart(this.cartItems.value);
   }
 
   removeFromCart(productId: number, optionsKey?: string) {
@@ -34,6 +54,7 @@ export class CartService {
       return !(item.product.id === productId && (!optionsKey || currentOptKey === optionsKey));
     });
     this.cartItems.next(updatedItems);
+    this.saveCart(updatedItems);
   }
 
   updateQuantity(productId: number, quantity: number, optionsKey?: string) {
@@ -48,12 +69,14 @@ export class CartService {
         this.removeFromCart(productId, optionsKey);
       } else {
         this.cartItems.next([...currentItems]);
+        this.saveCart(this.cartItems.value);
       }
     }
   }
 
   clearCart() {
     this.cartItems.next([]);
+    localStorage.removeItem('uparmall_cart');
   }
 
   getItemTotalPrice(item: CartItem): number {
@@ -76,39 +99,70 @@ export class CartService {
     return this.cartItems.value.reduce((total, item) => total + this.getItemTotalPrice(item), 0);
   }
 
-  generateWhatsAppLink(settings: Settings, deliveryMethod: 'pickup' | 'delivery' = 'pickup', deliveryFee: number = 0) {
+  generateWhatsAppLink(settings: Settings, deliveryMethod: 'pickup' | 'delivery' = 'pickup', deliveryFee: number = 0, shippingInfo?: any) {
     const items = this.cartItems.value;
     if (items.length === 0) return null;
 
     const subtotal = this.getTotalPrice();
     const finalTotal = subtotal + (deliveryMethod === 'delivery' ? deliveryFee : 0);
+    const NL = '\n';
 
-    let message = settings.welcomeMessage || '¡Hola! Quiero hacer un pedido.';
-    message += '\n\n*Resumen de mi pedido:*\n';
+    // Escapes Unicode nativos de TypeScript — resueltos en compilación, sin dependencias de runtime
+    const iconBox    = '\u{1F4E6}'; // 📦
+    const iconTruck  = '\u{1F69A}'; // 🚚
+    const iconPerson = '\u{1F464}'; // 👤
+    const iconPin    = '\u{1F4CD}'; // 📍
+    const iconHouse  = '\u{1F3E0}'; // 🏠
+    const iconMobile = '\u{1F4F1}'; // 📱
+    const iconStore  = '\u{1F3EA}'; // 🏪
+    const iconCart   = '\u{1F6D2}'; // 🛒
+    const iconMoney  = '\u{1F4B0}'; // 💰
+    const iconCheck  = '\u{2705}';  // ✅
 
-    items.forEach(item => {
-      message += `• ${item.quantity}x ${item.product.name}`;
-      
-      if (item.selectedOptions) {
-        const opts = Object.entries(item.selectedOptions)
-          .map(([key, opt]: [string, any]) => `${key}: ${opt.label}`)
-          .join(', ');
-        message += ` (${opts})`;
-      }
-      
-      message += ` - $${this.getItemTotalPrice(item).toLocaleString()}\n`;
-    });
-    
-    message += `\n*Subtotal: $${subtotal.toLocaleString()}*`;
+    const lines: string[] = [];
 
-    if (deliveryMethod === 'delivery') {
-      message += `\n*Método: Envío a Domicilio (+$${deliveryFee.toLocaleString()})*`;
+    lines.push(iconBox + ' NUEVO PEDIDO - ' + settings.businessName);
+    lines.push('');
+
+    if (deliveryMethod === 'delivery' && shippingInfo) {
+      lines.push(iconTruck + ' DATOS DE ENVIO');
+      lines.push(iconPerson + ' Cliente: ' + shippingInfo.name);
+      lines.push(iconPin + ' Direccion: ' + shippingInfo.address);
+      lines.push(iconHouse + ' Barrio/Edif: ' + shippingInfo.neighborhood);
+      lines.push(iconMobile + ' Celular: ' + shippingInfo.phone);
+      lines.push('');
     } else {
-      message += `\n*Método: Pasar a Recoger*`;
+      lines.push(iconStore + ' METODO: Pasar a Recoger en tienda');
+      lines.push('');
     }
 
-    message += `\n\n*TOTAL A PAGAR: $${finalTotal.toLocaleString()}*`;
+    lines.push(iconCart + ' PRODUCTOS');
 
-    return `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`;
+    items.forEach(item => {
+      let line = '• ' + item.quantity + 'x ' + item.product.name;
+      if (item.selectedOptions) {
+        const opts = Object.entries(item.selectedOptions)
+          .map(([key, opt]: [string, any]) => key + ': ' + opt.label)
+          .join(', ');
+        line += ' (' + opts + ')';
+      }
+      line += ' - $' + this.getItemTotalPrice(item).toLocaleString('es-CO');
+      lines.push(line);
+    });
+
+    lines.push('');
+    lines.push(iconMoney + ' RESUMEN');
+    lines.push('Subtotal: $' + subtotal.toLocaleString('es-CO'));
+
+    if (deliveryMethod === 'delivery') {
+      lines.push('Envio: $' + deliveryFee.toLocaleString('es-CO'));
+    }
+
+    lines.push('');
+    lines.push(iconCheck + ' TOTAL A PAGAR: $' + finalTotal.toLocaleString('es-CO'));
+
+    const message = lines.join(NL);
+
+    return 'https://wa.me/' + settings.whatsappNumber + '?text=' + encodeURIComponent(message);
   }
 }

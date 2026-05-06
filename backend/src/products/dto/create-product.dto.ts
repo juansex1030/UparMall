@@ -25,4 +25,7 @@ export class CreateProductDto {
 
   @IsOptional()
   variants?: any[];
+
+  @IsOptional()
+  specifications?: any[];
 }

@@ -20,6 +20,10 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
           </button>
           <h2>Panel de Administración</h2>
         </div>
+        <!-- Toast Notification -->
+        <div class="toast" *ngIf="toast.visible" [class.toast-error]="toast.isError">
+          {{ toast.message }}
+        </div>
         <div class="tabs-container">
           <div class="tabs">
             <button class="tab-btn" [class.active]="activeTab === 'products'" (click)="activeTab = 'products'">
@@ -124,6 +128,25 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                   </div>
                   <button type="button" class="add-option-btn" (click)="addOption(i)">
                     <svg lucidePlus size="14"></svg> Añadir Opción
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group variants-section">
+              <div class="section-header">
+                <label>Especificaciones Técnicas (Opcional)</label>
+                <button type="button" class="add-variant-btn" (click)="addSpecification()">
+                  <svg lucidePlus size="14"></svg> Añadir Especificación
+                </button>
+              </div>
+              
+              <div class="specs-grid" *ngIf="currentProduct.specifications?.length">
+                <div class="spec-row glass" *ngFor="let spec of currentProduct.specifications; let i = index">
+                  <input type="text" [(ngModel)]="spec.key" name="specK-{{i}}" placeholder="Ej: Memoria">
+                  <input type="text" [(ngModel)]="spec.value" name="specV-{{i}}" placeholder="Ej: 128GB">
+                  <button type="button" class="remove-btn" (click)="removeSpecification(i)">
+                    <svg lucideX size="16"></svg>
                   </button>
                 </div>
               </div>
@@ -289,7 +312,15 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
   `,
   styles: [`
     .admin-container { padding: 20px 0; }
-    .admin-header { padding: 20px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 15px; }
+    .admin-header { padding: 20px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 15px; position: relative; }
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: #2ecc71; color: white; padding: 14px 28px; border-radius: 12px;
+      font-weight: 700; font-size: 0.95rem; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      animation: slideUp 0.3s ease-out;
+    }
+    .toast.toast-error { background: #e74c3c; }
+    @keyframes slideUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
     .header-main { display: flex; align-items: center; gap: 15px; }
     .back-link { background: transparent; color: #666; padding: 0; min-height: auto; }
     .back-link:hover { color: var(--primary-color); }
@@ -396,6 +427,10 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
     .store-link:hover { text-decoration: underline; }
     .view-btn { background: #eee; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
     .view-btn:hover { background: #e0e0e0; }
+
+    .specs-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .spec-row { display: flex; gap: 10px; align-items: center; padding: 10px; }
+    .spec-row input { flex: 1; min-width: 0; padding: 8px !important; }
   `]
 })
 export class AdminComponent implements OnInit {
@@ -405,10 +440,12 @@ export class AdminComponent implements OnInit {
   masterStores: any[] = [];
   isSuperAdmin = false;
   private adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com'];
+  toast = { visible: false, message: '', isError: false };
+  private toastTimer: any;
   
   showForm = false;
   editingProduct: Product | null = null;
-  currentProduct: Partial<Product> = { name: '', price: 0, description: '', imageUrl: '', category: '', variants: [] };
+  currentProduct: Partial<Product> = { name: '', price: 0, description: '', imageUrl: '', category: '', variants: [], specifications: [] };
 
   constructor(
     private dataService: DataService,
@@ -438,40 +475,40 @@ export class AdminComponent implements OnInit {
     this.isSuperAdmin = !!email && this.adminEmails.includes(email);
   }
 
+  private showToast(message: string, isError = false) {
+    clearTimeout(this.toastTimer);
+    this.toast = { visible: true, message, isError };
+    this.toastTimer = setTimeout(() => this.toast.visible = false, 3000);
+  }
+
   loadMasterData() {
     this.dataService.getMasterStores().subscribe({
       next: (data) => this.masterStores = data,
-      error: (err) => console.error('Error cargando datos master', err)
+      error: () => this.showToast('Error cargando datos de tiendas', true)
     });
   }
 
   loadProducts() {
     this.dataService.getMyProducts().subscribe({
       next: (data) => this.products = data,
-      error: (err) => console.error('Error cargando mis productos', err)
+      error: () => this.showToast('Error cargando productos', true)
     });
   }
 
   loadSettings() {
-    console.log('Admin: Solicitando configuración...');
     this.dataService.getMySettings().subscribe({
       next: (data) => {
-        console.log('Admin: Configuración recibida con éxito:', data);
         this.settings = data;
         this.updatePreview();
-        this.cdr.detectChanges(); // Forzar actualización de la UI
+        this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Admin: Error cargando mi configuración', err);
-        // Si hay error, intentar cargar de nuevo tras 1 segundo
-        setTimeout(() => this.loadSettings(), 1000);
-      }
+      error: () => this.showToast('Error cargando configuración', true)
     });
   }
 
   openAddForm() {
     this.editingProduct = null;
-    this.currentProduct = { name: '', price: 0, description: '', imageUrl: '', category: '', variants: [] };
+    this.currentProduct = { name: '', price: 0, description: '', imageUrl: '', category: '', variants: [], specifications: [] };
     this.showForm = true;
   }
 
@@ -488,30 +525,24 @@ export class AdminComponent implements OnInit {
 
   saveProduct() {
     if (this.editingProduct) {
-      const { id, createdAt, updatedAt, ...payload } = this.currentProduct as any;
-      
+      const payload: any = {
+        name: this.currentProduct.name,
+        price: this.currentProduct.price,
+        description: this.currentProduct.description,
+        imageUrl: this.currentProduct.imageUrl,
+        category: this.currentProduct.category,
+        isActive: this.currentProduct.isActive,
+        variants: this.currentProduct.variants,
+        specifications: this.currentProduct.specifications
+      };
       this.dataService.updateProduct(this.editingProduct.id, payload).subscribe({
-        next: () => {
-          alert('✅ Producto actualizado con éxito');
-          this.loadProducts();
-          this.closeForm();
-        },
-        error: (err) => {
-          console.error('Error al actualizar', err);
-          alert('❌ Error al actualizar el producto');
-        }
+        next: () => { this.showToast('Producto actualizado'); this.loadProducts(); this.closeForm(); },
+        error: () => this.showToast('Error al actualizar el producto', true)
       });
     } else {
       this.dataService.createProduct(this.currentProduct).subscribe({
-        next: () => {
-          alert('✅ Producto creado con éxito');
-          this.loadProducts();
-          this.closeForm();
-        },
-        error: (err) => {
-          console.error('Error al crear', err);
-          alert('❌ Error al crear el producto. Revisa que el nombre y precio sean correctos.');
-        }
+        next: () => { this.showToast('Producto creado'); this.loadProducts(); this.closeForm(); },
+        error: () => this.showToast('Error al crear el producto', true)
       });
     }
   }
@@ -519,14 +550,8 @@ export class AdminComponent implements OnInit {
   deleteProduct(id: number) {
     if (confirm('¿Estás seguro de eliminar este producto?')) {
       this.dataService.deleteProduct(id).subscribe({
-        next: () => {
-          alert('🗑️ Producto eliminado');
-          this.loadProducts();
-        },
-        error: (err) => {
-          console.error('Error al eliminar', err);
-          alert('❌ Error al eliminar el producto');
-        }
+        next: () => { this.showToast('Producto eliminado'); this.loadProducts(); },
+        error: () => this.showToast('Error al eliminar el producto', true)
       });
     }
   }
@@ -552,17 +577,9 @@ export class AdminComponent implements OnInit {
         backgroundColor: this.settings.backgroundColor,
         backgroundImageUrl: this.settings.backgroundImageUrl,
       };
-      
       this.dataService.updateSettings(payload).subscribe({
-        next: (newSettings) => {
-          this.settings = newSettings;
-          this.updatePreview();
-          alert('✅ Configuración guardada con éxito');
-        },
-        error: (err) => {
-          console.error('Error al guardar', err);
-          alert('❌ Error al guardar la configuración');
-        }
+        next: (s) => { this.settings = s; this.updatePreview(); this.showToast('Configuración guardada'); },
+        error: () => this.showToast('Error al guardar la configuración', true)
       });
     }
   }
@@ -572,13 +589,11 @@ export class AdminComponent implements OnInit {
     if (file && this.settings) {
       this.dataService.uploadImage(file).subscribe({
         next: (res) => {
-          if (type === 'logo') {
-            this.settings!.logoUrl = res.url;
-          } else {
-            this.settings!.backgroundImageUrl = res.url;
-          }
+          if (type === 'logo') this.settings!.logoUrl = res.url;
+          else this.settings!.backgroundImageUrl = res.url;
+          this.showToast('Imagen subida');
         },
-        error: (err) => console.error('Error al subir imagen', err)
+        error: () => this.showToast('Error al subir la imagen', true)
       });
     }
   }
@@ -587,14 +602,8 @@ export class AdminComponent implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.dataService.uploadImage(file).subscribe({
-        next: (res) => {
-          this.currentProduct.imageUrl = res.url;
-          alert('📸 Imagen del producto subida a la nube');
-        },
-        error: (err) => {
-          console.error('Error subiendo imagen', err);
-          alert('❌ Error al subir la imagen del producto');
-        }
+        next: (res) => { this.currentProduct.imageUrl = res.url; this.showToast('Imagen del producto subida'); },
+        error: () => this.showToast('Error al subir la imagen del producto', true)
       });
     }
   }
@@ -617,11 +626,8 @@ export class AdminComponent implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.dataService.uploadImage(file).subscribe({
-        next: (res) => {
-          this.currentProduct.variants![vIdx].options[oIdx].imageUrl = res.url;
-          alert('📸 Imagen de variante subida');
-        },
-        error: (err) => alert('❌ Error al subir imagen de variante')
+        next: (res) => { this.currentProduct.variants![vIdx].options[oIdx].imageUrl = res.url; this.showToast('Imagen de variante subida'); },
+        error: () => this.showToast('Error al subir imagen de variante', true)
       });
     }
   }
@@ -630,18 +636,28 @@ export class AdminComponent implements OnInit {
     this.currentProduct.variants![variantIndex].options.splice(optionIndex, 1);
   }
 
-  onImgError(event: any) {
-    event.target.src = 'https://cdn-icons-png.flaticon.com/512/1695/1695213.png';
+  addSpecification() {
+    if (!this.currentProduct.specifications) this.currentProduct.specifications = [];
+    this.currentProduct.specifications.push({ key: '', value: '' });
   }
+
+  removeSpecification(index: number) {
+    this.currentProduct.specifications?.splice(index, 1);
+  }
+
   goBack() {
-    this.router.navigate(['/']);
-  }
-  goToMyStore() {
-    if (this.settings && (this.settings as any).slug) {
-      const url = this.router.serializeUrl(this.router.createUrlTree([`/${(this.settings as any).slug}`]));
-      window.open(url, '_blank');
+    if (this.settings?.slug) {
+      this.router.navigate(['/', this.settings.slug]);
     } else {
-      alert('Esta funcionalidad requiere cargar el Store Slug primero o configurar tu tienda.');
+      window.history.back();
+    }
+  }
+
+  goToMyStore() {
+    if (this.settings?.slug) {
+      window.open('/' + this.settings.slug, '_blank');
+    } else {
+      this.showToast('Configura el slug de tu tienda primero', true);
     }
   }
 

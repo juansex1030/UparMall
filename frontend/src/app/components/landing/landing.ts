@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
   template: `
     <div class="landing-container">
       <div class="hero-content">
-        <img src="assets/logo-uparmall.png" alt="UparMall Logo" class="landing-logo">
+        <img src="/assets/logo-uparmall.png" alt="UparMall Logo" class="landing-logo">
         <h1>Bienvenido a UparMall</h1>
         <p>La plataforma ideal para digitalizar tu negocio. Crea tu tienda en línea en minutos, gestiona tu inventario y recibe pedidos por WhatsApp.</p>
         <div class="cta-buttons">

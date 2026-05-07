@@ -258,6 +258,7 @@ export class CartComponent implements OnInit, OnDestroy {
         return;
       }
       this.storeSlug = slug;
+      this.cartService.setStoreSlug(slug);
       
       this.dataService.getSettingsBySlug(slug).subscribe({
         next: (settings) => {

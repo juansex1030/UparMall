@@ -35,18 +35,51 @@ export class SettingsService {
       .single();
 
     if (error && error.code === 'PGRST116') {
-      const { data: userResponse } = await this.supabase.adminClient.auth.admin?.getUserById(storeId) || { data: null };
-      const email = userResponse?.user?.email || `tienda-${Math.floor(Math.random()*1000)}`;
-      const defaultSlug = slugify(email.split('@')[0]) + '-' + Math.floor(Math.random() * 100);
+      console.log('New user detected, creating default settings for:', storeId);
+      
+      const { data: userResponse, error: userError } = await this.supabase.adminClient.auth.admin?.getUserById(storeId) || { data: null, error: new Error('Admin auth not available') };
+      
+      if (userError) {
+        console.error('Error fetching user from auth:', userError.message);
+      }
 
+      const email = userResponse?.user?.email || `tienda-${Math.floor(Math.random()*1000)}`;
+      let baseSlug = slugify(email.split('@')[0]).toLowerCase();
+      let defaultSlug = baseSlug;
+      
+      // Verificar si el slug ya existe (insensible a mayúsculas)
+      let isUnique = false;
+      let attempts = 0;
+      
+      while (!isUnique && attempts < 10) {
+        const { data: existingStore } = await this.supabase.adminClient
+          .from('Stores')
+          .select('slug')
+          .ilike('slug', defaultSlug)
+          .single();
+        
+        if (!existingStore) {
+          isUnique = true;
+        } else {
+          // Si existe, le pegamos un número aleatorio y reintentamos
+          defaultSlug = `${baseSlug}-${Math.floor(Math.random() * 999)}`;
+          attempts++;
+        }
+      }
+
+      console.log('Creating store with unique slug:', defaultSlug);
       const { error: storeError } = await this.supabase.adminClient.from('Stores').upsert([{
         id: storeId,
         slug: defaultSlug,
         ownerName: email
       }], { onConflict: 'id' });
 
-      if (storeError) throw storeError;
+      if (storeError) {
+        console.error('Error creating store:', storeError.message);
+        throw storeError;
+      }
 
+      console.log('Creating default settings...');
       // Crear Settings
       const { data: newSettings, error: insertError } = await this.supabase.adminClient.from('Settings').upsert([{
         storeId: storeId,
@@ -61,7 +94,12 @@ export class SettingsService {
         heroSlides: []
       }], { onConflict: 'storeId' }).select('*, Stores ( slug )').single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error creating settings:', insertError.message);
+        throw insertError;
+      }
+      
+      console.log('Default settings created successfully');
       settings = newSettings;
     } else if (error) {
       throw error;

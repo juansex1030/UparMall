@@ -1,18 +1,18 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   template: `
     <div class="landing-container">
       <div class="hero-content">
         <h1>Bienvenido a UparMall</h1>
         <p>La plataforma ideal para digitalizar tu negocio. Crea tu tienda en línea en minutos, gestiona tu inventario y recibe pedidos por WhatsApp.</p>
         <div class="cta-buttons">
-          <a routerLink="/admin/login" class="primary-btn">Crea tu Tienda o Inicia Sesión</a>
+          <a [href]="adminUrl + '/login'" class="primary-btn">Crea tu Tienda o Inicia Sesión</a>
         </div>
       </div>
     </div>
@@ -56,4 +56,6 @@ import { RouterLink } from '@angular/router';
     }
   `]
 })
-export class LandingComponent {}
+export class LandingComponent {
+  adminUrl = environment.adminUrl;
+}

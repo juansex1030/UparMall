@@ -64,7 +64,7 @@ export class AuthService {
 
   async resetPassword(email: string): Promise<any> {
     return this.supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/admin/login',
+      redirectTo: window.location.origin + '/login',
     });
   }
 

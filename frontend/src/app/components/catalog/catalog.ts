@@ -6,7 +6,6 @@ import { DataService } from '@shared/services/data.service';
 import { CartService } from '@shared/services/cart.service';
 import { Product, Settings, HeroSlide, CartItem } from '@shared/models/models';
 import {
-  LucideChevronDown,
   LucideX,
   LucideTrash2,
   LucideClock
@@ -20,7 +19,6 @@ import { catchError, of, Subscription } from 'rxjs';
   imports: [
     CommonModule,
     FormsModule,
-    LucideChevronDown,
     LucideX,
     LucideClock,
     DecimalPipe
@@ -1365,6 +1363,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this._subs.push(this.route.params.subscribe(params => {
       this.storeSlug = params['slug'];
+      this.cartService.setStoreSlug(this.storeSlug);
       this.loadStoreData();
     }));
 
@@ -1392,61 +1391,45 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   loadStoreData() {
     this.isLoading = true;
-    this.dataService
-      .getProductsBySlug(this.storeSlug)
-      .pipe(
-        catchError((err) => {
-          console.error('Error al cargar productos de esta tienda', err);
-          return of([]);
-        }),
-      )
-      .subscribe((products) => {
+    
+    // Usamos forkJoin para esperar a que AMBAS peticiones terminen antes de quitar el cargador
+    import('rxjs').then(({ forkJoin }) => {
+      forkJoin({
+        products: this.dataService.getProductsBySlug(this.storeSlug).pipe(catchError(() => of([]))),
+        settings: this.dataService.getSettingsBySlug(this.storeSlug).pipe(catchError(() => of(null)))
+      }).subscribe(({ products, settings }) => {
+        // Procesar productos
         this.products = products;
         const cats = products
           .map((p) => p.category)
           .filter((c) => c && c.trim() !== '') as string[];
-        const uniqueCats = [...new Set(cats)];
-        this.categories = ['Todos', ...uniqueCats];
-        this.navCategories = this.categories.slice(1, 7); // top 6 non-'Todos' categories
+        this.categories = ['Todos', ...new Set(cats)];
+        this.navCategories = this.categories.slice(1, 7);
         this.applyFilters();
         this.startAutoSlide();
-        if (this.settings) this.isLoading = false;
-        this.cdr.markForCheck();
-      });
 
-    this.dataService
-      .getSettingsBySlug(this.storeSlug)
-      .pipe(
-        catchError((err) => {
-          console.error('Error cargando configuración de la tienda', err);
-          return of({
-            businessName: 'Mi Negocio',
-            primaryColor: '#ff4081',
-            secondaryColor: '#3f51b5',
-            whatsappNumber: '573000000000',
-            welcomeMessage: 'Hola',
-          } as Settings);
-        }),
-      )
-      .subscribe((settings) => {
-        this.settings = settings;
+        // Procesar configuración
         if (settings) {
-          if (settings.heroSlides && settings.heroSlides?.length > 0) {
-            this.heroSlides = settings.heroSlides;
-          }
+          this.settings = settings;
+          if (settings.heroSlides?.length) this.heroSlides = settings.heroSlides;
+          
           document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
           if (settings.accentColor) document.documentElement.style.setProperty('--accent-color', settings.accentColor);
           if (settings.fontFamily) document.documentElement.style.setProperty('--font-family', settings.fontFamily);
-          // Cache combined styles once — avoids method call on every CD cycle
+          
           this.combinedStyles = {
             'font-family': settings.fontFamily || "'Inter', sans-serif",
             ...(settings.backgroundColor ? { 'background-color': settings.backgroundColor } : {})
           };
+          this.checkStoreStatus();
+        } else {
+          console.error('No se encontró configuración para la tienda:', this.storeSlug);
         }
+
         this.isLoading = false;
-        this.checkStoreStatus();
         this.cdr.markForCheck();
       });
+    });
   }
 
   checkStoreStatus() {

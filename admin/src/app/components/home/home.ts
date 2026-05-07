@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -148,14 +148,17 @@ export class HomeComponent implements OnDestroy {
     this.mode = m;
     this.errorMsg = '';
     this.successMsg = '';
+    this.cdr.detectChanges();
   }
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this._authSub = this.authService.authEvent$.subscribe(event => {
       if (event === 'PASSWORD_RECOVERY') this.setMode('update-password');
+      this.cdr.detectChanges();
     });
   }
 
@@ -169,8 +172,11 @@ export class HomeComponent implements OnDestroy {
     this.loading = true;
     const { data, error } = await this.authService.signIn(this.email, this.password);
     this.loading = false;
-    if (error) { this.errorMsg = 'Correo o contraseña incorrectos'; return; }
-    if (data?.session) this.router.navigate(['/']);
+    if (error) { this.errorMsg = 'Correo o contraseña incorrectos'; this.cdr.detectChanges(); return; }
+    if (data?.session) {
+      this.router.navigate(['/']);
+    }
+    this.cdr.detectChanges();
   }
 
   async onRegister() {
@@ -187,6 +193,7 @@ export class HomeComponent implements OnDestroy {
       this.errorMsg = err.message || 'Error al registrar';
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -202,6 +209,7 @@ export class HomeComponent implements OnDestroy {
       this.errorMsg = err.message || 'Error al solicitar el cambio de contraseña';
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -212,11 +220,25 @@ export class HomeComponent implements OnDestroy {
     try {
       const { error } = await this.authService.updatePassword(this.password);
       if (error) throw error;
-      this.router.navigate(['/']);
+      
+      this.successMsg = 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.';
+      this.password = '';
+      this.email = '';
+      this.cdr.detectChanges();
+      
+      // Esperar un momento para que vean el mensaje y luego mandarlos al login limpio
+      setTimeout(async () => {
+        await this.authService.signOut();
+        this.mode = 'login';
+        this.successMsg = 'Contraseña actualizada. Ingresa con tus nuevas credenciales.';
+        this.cdr.detectChanges();
+      }, 2000);
+
     } catch (err: any) {
       this.errorMsg = err.message || 'Error al actualizar contraseña';
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 }

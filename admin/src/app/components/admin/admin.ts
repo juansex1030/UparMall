@@ -16,7 +16,8 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
   template: `
     <div class="admin-container">
       <!-- Loading State -->
-      <div class="loading-overlay" *ngIf="!settings">
+      <!-- Loading State -->
+      <div class="loading-overlay" *ngIf="isLoading">
         <div class="glass-panel" style="text-align: center; padding: 60px;">
           <div class="spinner" style="margin: 0 auto 20px;"></div>
           <h2 style="font-weight: 900; color: #0f172a;">Cargando Panel...</h2>
@@ -24,7 +25,19 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
         </div>
       </div>
 
-      <div *ngIf="settings">
+      <!-- Error State -->
+      <div class="loading-overlay" *ngIf="!isLoading && !settings">
+        <div class="glass-panel" style="text-align: center; padding: 60px; border-color: #fecaca; background: #fff5f5;">
+          <svg lucideCircleOff size="48" style="color: #ef4444; margin-bottom: 20px;"></svg>
+          <h2 style="font-weight: 900; color: #991b1b;">Error de Conexión</h2>
+          <p style="color: #b91c1c; margin-bottom: 30px;">No pudimos conectar con tu servidor local. Asegúrate de que el backend esté corriendo.</p>
+          <button (click)="loadSettings()" class="btn-action btn-dark" style="margin: 0 auto;">
+            Reintentar Conexión
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="settings && !isLoading">
       <header class="admin-header">
         <div class="header-main">
           <div class="header-info">
@@ -1440,8 +1453,8 @@ export class AdminComponent implements OnInit, OnDestroy {
     return filtered;
   }
   activeSettingsSection: 'general' | 'colors' | 'hero' | 'social' | 'horarios' = 'general';
+  isLoading = true;
   isPreviewActive = true;
-  
   showForm = false;
   editingProduct: Product | null = null;
   currentProduct: Partial<Product> = { name: '', price: 0, description: '', imageUrl: '', category: '', variants: [], specifications: [] };
@@ -1465,6 +1478,8 @@ export class AdminComponent implements OnInit, OnDestroy {
         if (this.isSuperAdmin) {
           this.loadMasterData();
         }
+      } else if (!session) {
+        this.isLoading = false;
       }
     }));
   }
@@ -1537,9 +1552,14 @@ export class AdminComponent implements OnInit, OnDestroy {
           ];
         }
         this.updatePreview();
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: () => this.showToast('Error cargando configuración', true)
+      error: () => {
+        this.showToast('Error cargando configuración', true);
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -1768,8 +1788,13 @@ export class AdminComponent implements OnInit, OnDestroy {
   }
 
   async logout() {
-    await this.authService.signOut();
-    this.router.navigate(['/']);
+    try {
+      await this.authService.signOut();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      console.error('Logout error:', error);
+      this.showToast('Error al cerrar sesión', true);
+    }
   }
 
   viewStore(slug: string) {

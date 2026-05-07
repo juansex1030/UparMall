@@ -8,17 +8,34 @@ import { Product, CartItem, Settings } from '../models/models';
 export class CartService {
   private cartItems = new BehaviorSubject<CartItem[]>([]);
   cartItems$ = this.cartItems.asObservable();
+  
+  private currentStoreSlug: string = '';
+  private baseKey = 'uparmall_cart';
 
-  constructor() {
-    this.loadCart();
+  constructor() {}
+
+  private getCartKey(): string {
+    return this.currentStoreSlug ? `${this.baseKey}_${this.currentStoreSlug}` : this.baseKey;
+  }
+
+  setStoreSlug(slug: string) {
+    if (this.currentStoreSlug !== slug) {
+      this.currentStoreSlug = slug;
+      this.loadCart();
+    }
   }
 
   private saveCart(items: CartItem[]) {
-    localStorage.setItem('uparmall_cart', JSON.stringify(items));
+    if (!this.currentStoreSlug) return;
+    localStorage.setItem(this.getCartKey(), JSON.stringify(items));
   }
 
   private loadCart() {
-    const saved = localStorage.getItem('uparmall_cart');
+    if (!this.currentStoreSlug) {
+      this.cartItems.next([]);
+      return;
+    }
+    const saved = localStorage.getItem(this.getCartKey());
     if (saved) {
       try {
         this.cartItems.next(JSON.parse(saved));
@@ -98,7 +115,9 @@ export class CartService {
 
   clearCart() {
     this.cartItems.next([]);
-    localStorage.removeItem('uparmall_cart');
+    if (this.currentStoreSlug) {
+      localStorage.removeItem(this.getCartKey());
+    }
   }
 
   getItemTotalPrice(item: CartItem): number {

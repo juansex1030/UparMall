@@ -8,6 +8,8 @@ import { ProductsModule } from './products/products.module';
 import { SettingsModule } from './settings/settings.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { MasterModule } from './master/master.module';
+import { MailModule } from './utils/mail.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -19,7 +21,8 @@ import { MasterModule } from './master/master.module';
     ProductsModule,
     SettingsModule,
     UploadsModule,
-    MasterModule,
+    WebhooksModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

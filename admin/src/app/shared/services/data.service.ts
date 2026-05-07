@@ -1,13 +1,14 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
+import { environment } from '@env/environment';
 import { Product, Settings } from '../models/models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataService {
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = environment.apiUrl;
 
   constructor(@Inject(HttpClient) private http: HttpClient) {}
 
@@ -17,7 +18,7 @@ export class DataService {
   }
 
   getMyProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.apiUrl}/products/my-products`);
+    return this.http.get<Product[]>(`${this.apiUrl}/products/my-products`).pipe(timeout(10000));
   }
 
   getProduct(id: number): Observable<Product> {
@@ -42,7 +43,7 @@ export class DataService {
   }
 
   getMySettings(): Observable<Settings> {
-    return this.http.get<Settings>(`${this.apiUrl}/settings`);
+    return this.http.get<Settings>(`${this.apiUrl}/settings`).pipe(timeout(10000));
   }
 
   updateSettings(settings: Partial<Settings>): Observable<Settings> {

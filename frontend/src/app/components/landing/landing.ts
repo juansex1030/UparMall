@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
   template: `
     <div class="landing-container">
       <div class="hero-content">
+        <img src="assets/logo-uparmall.png" alt="UparMall Logo" class="landing-logo">
         <h1>Bienvenido a UparMall</h1>
         <p>La plataforma ideal para digitalizar tu negocio. Crea tu tienda en línea en minutos, gestiona tu inventario y recibe pedidos por WhatsApp.</p>
         <div class="cta-buttons">
@@ -35,6 +36,13 @@ import { environment } from '../../../environments/environment';
       padding: 60px 40px;
       border-radius: 24px;
       border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .landing-logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
     h1 { font-size: 3rem; margin-bottom: 20px; font-weight: 800; }
     p { font-size: 1.2rem; margin-bottom: 40px; line-height: 1.6; opacity: 0.9; }

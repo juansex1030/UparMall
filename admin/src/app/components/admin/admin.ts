@@ -2,18 +2,29 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { environment } from '@env/environment';
 import { DataService } from '@shared/services/data.service';
 import { AuthService } from '@shared/services/auth.service';
 import { Subscription } from 'rxjs';
 import { Product, Settings } from '@shared/models/models';
-import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideEyeOff, LucideSettings, LucidePalette, LucideImage, LucideShare2, LucideCheckCircle, LucideCircleOff } from '@lucide/angular';
+import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideEyeOff, LucideSettings, LucidePalette, LucideImage, LucideShare2, LucideCheckCircle, LucideCircleOff, LucideClock } from '@lucide/angular';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideEyeOff, LucideSettings, LucidePalette, LucideImage, LucideShare2, LucideCheckCircle, LucideCircleOff],
+  imports: [CommonModule, FormsModule, LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideUpload, LucideEye, LucideEyeOff, LucideSettings, LucidePalette, LucideImage, LucideShare2, LucideCheckCircle, LucideCircleOff, LucideClock],
   template: `
-    <div class="admin-container" *ngIf="settings">
+    <div class="admin-container">
+      <!-- Loading State -->
+      <div class="loading-overlay" *ngIf="!settings">
+        <div class="glass-panel" style="text-align: center; padding: 60px;">
+          <div class="spinner" style="margin: 0 auto 20px;"></div>
+          <h2 style="font-weight: 900; color: #0f172a;">Cargando Panel...</h2>
+          <p style="color: #64748b;">Estamos preparando tu panel de administración</p>
+        </div>
+      </div>
+
+      <div *ngIf="settings">
       <header class="admin-header">
         <div class="header-main">
           <div class="header-info">
@@ -257,6 +268,9 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
               <button class="s-nav-item" [class.active]="activeSettingsSection === 'social'" (click)="activeSettingsSection = 'social'">
                 <svg lucideShare2 size="18"></svg> Redes
               </button>
+              <button class="s-nav-item" [class.active]="activeSettingsSection === 'horarios'" (click)="activeSettingsSection = 'horarios'">
+                <svg lucideClock size="18"></svg> Horarios
+              </button>
               <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
                 <button class="btn-action btn-dark" style="width: 100%" (click)="saveSettings()">
                   <svg lucideSave size="18"></svg> Guardar Todo
@@ -292,6 +306,10 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                 <div class="form-group">
                   <label>Sobre Nosotros (Descripción de la tienda)</label>
                   <textarea [(ngModel)]="settings.description" rows="5" placeholder="Escribe aquí la historia o descripción de tu negocio..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Dirección Física (Opcional)</label>
+                  <input type="text" [(ngModel)]="settings.address" placeholder="Ej: Calle 123 #45-67, Barrio Centro">
                 </div>
                 <div class="form-group">
                   <label>Mensaje de Bienvenida (Hero)</label>
@@ -422,6 +440,45 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
                   </div>
                 </div>
               </div>
+
+              <!-- Business Hours Section -->
+              <div class="s-section" *ngIf="activeSettingsSection === 'horarios'">
+                <div style="margin-bottom: 30px;">
+                  <h3 style="margin: 0;">Horario Laboral</h3>
+                  <p style="color: #64748b; font-size: 0.85rem; margin-top: 6px;">Configura los días y horas en los que tu tienda está abierta al público.</p>
+                </div>
+
+                <div class="hours-grid">
+                  <div *ngFor="let day of settings.businessHours; let i = index" class="day-row" [class.day-disabled]="!day.enabled">
+                    <div class="day-info">
+                      <button type="button" 
+                        class="btn-toggle-mini" 
+                        [class.active]="day.enabled"
+                        (click)="day.enabled = !day.enabled">
+                        <svg *ngIf="day.enabled" lucideCheckCircle size="14"></svg>
+                        <svg *ngIf="!day.enabled" lucideCircleOff size="14"></svg>
+                      </button>
+                      <span class="day-name">{{ day.day }}</span>
+                    </div>
+                    
+                    <div class="time-inputs" *ngIf="day.enabled">
+                      <div class="time-group">
+                        <label>Abre</label>
+                        <input type="time" [(ngModel)]="day.open" class="time-field">
+                      </div>
+                      <div class="time-separator">a</div>
+                      <div class="time-group">
+                        <label>Cierra</label>
+                        <input type="time" [(ngModel)]="day.close" class="time-field">
+                      </div>
+                    </div>
+                    
+                    <div class="day-status-text" *ngIf="!day.enabled">
+                      Cerrado todo el día
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -516,6 +573,7 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
             </table>
           </div>
         </div>
+      </div>
       </div>
     </div>
   `,
@@ -1232,6 +1290,103 @@ import { LucidePlus, LucideSquarePen, LucideTrash2, LucideSave, LucideX, LucideU
       .live-preview-panel { display: none; }
       .settings-layout { grid-template-columns: 1fr; }
     }
+
+    /* Business Hours Styles */
+    .hours-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .day-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #f8fafc;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      transition: 0.3s;
+    }
+    .day-row:hover {
+      border-color: var(--accent);
+      background: white;
+    }
+    .day-disabled {
+      opacity: 0.6;
+      background: #f1f5f9;
+    }
+    .day-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      min-width: 140px;
+    }
+    .day-name {
+      font-weight: 800;
+      font-size: 1rem;
+    }
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .time-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .time-group label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .time-field {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 0.9rem;
+      outline: none;
+      background: white;
+    }
+    .time-field:focus {
+      border-color: var(--accent);
+    }
+    .time-separator {
+      margin-top: 18px;
+      font-weight: 800;
+      color: #94a3b8;
+      font-size: 0.8rem;
+    }
+    .day-status-text {
+      color: #64748b;
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+    /* Loading State */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(248, 250, 252, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e2e8f0;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   `]
 })
 export class AdminComponent implements OnInit, OnDestroy {
@@ -1284,7 +1439,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     
     return filtered;
   }
-  activeSettingsSection: 'general' | 'colors' | 'hero' | 'social' = 'general';
+  activeSettingsSection: 'general' | 'colors' | 'hero' | 'social' | 'horarios' = 'general';
   isPreviewActive = true;
   
   showForm = false;
@@ -1369,6 +1524,17 @@ export class AdminComponent implements OnInit, OnDestroy {
         }
         if (!this.settings.navbarStyle) {
           this.settings.navbarStyle = 'glass';
+        }
+        if (!this.settings.businessHours || this.settings.businessHours.length === 0) {
+          this.settings.businessHours = [
+            { day: 'Lunes', open: '08:00', close: '18:00', enabled: true },
+            { day: 'Martes', open: '08:00', close: '18:00', enabled: true },
+            { day: 'Miércoles', open: '08:00', close: '18:00', enabled: true },
+            { day: 'Jueves', open: '08:00', close: '18:00', enabled: true },
+            { day: 'Viernes', open: '08:00', close: '18:00', enabled: true },
+            { day: 'Sábado', open: '08:00', close: '13:00', enabled: true },
+            { day: 'Domingo', open: '08:00', close: '13:00', enabled: false },
+          ];
         }
         this.updatePreview();
         this.cdr.detectChanges();
@@ -1475,7 +1641,7 @@ export class AdminComponent implements OnInit, OnDestroy {
         'businessName', 'logoUrl', 'primaryColor', 'secondaryColor', 
         'accentColor', 'backgroundColor', 'whatsappNumber', 'welcomeMessage', 
         'slug', 'description', 'heroSlides', 'fontFamily', 
-        'navbarStyle', 'cardStyle', 'socialLinks', 'deliveryFee'
+        'navbarStyle', 'cardStyle', 'socialLinks', 'deliveryFee', 'businessHours', 'address'
       ];
 
       fields.forEach(field => {
@@ -1595,7 +1761,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   goToMyStore() {
     if (this.settings?.slug) {
-      window.open('/' + this.settings.slug, '_blank');
+      window.open(environment.storeUrl + '/' + this.settings.slug, '_blank');
     } else {
       this.showToast('Configura el slug de tu tienda primero', true);
     }
@@ -1607,7 +1773,6 @@ export class AdminComponent implements OnInit, OnDestroy {
   }
 
   viewStore(slug: string) {
-    const url = this.router.serializeUrl(this.router.createUrlTree([`/${slug}`]));
-    window.open(url, '_blank');
+    window.open(environment.storeUrl + '/' + slug, '_blank');
   }
 }

@@ -65,6 +65,14 @@ export class UpdateSettingDto {
   @IsOptional()
   heroSlides?: any[];
 
+  @IsArray()
+  @IsOptional()
+  businessHours?: any[];
+
   @IsOptional()
   deliveryFee?: number;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
 }

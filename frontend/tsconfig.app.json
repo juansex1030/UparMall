@@ -6,13 +6,14 @@
     "outDir": "./out-tsc/app",
     "types": [],
     "baseUrl": ".",
+    "emitDecoratorMetadata": true,
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["src/app/shared/*"],
+      "@env/*": ["src/environments/*"]
     }
   },
   "include": [
-    "src/**/*.ts",
-    "../shared/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "src/**/*.spec.ts"

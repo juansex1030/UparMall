@@ -8,7 +8,8 @@ import { Product, Settings, HeroSlide, CartItem } from '@shared/models/models';
 import {
   LucideChevronDown,
   LucideX,
-  LucideTrash2
+  LucideTrash2,
+  LucideClock
 } from '@lucide/angular';
 import { catchError, of, Subscription } from 'rxjs';
 
@@ -21,6 +22,7 @@ import { catchError, of, Subscription } from 'rxjs';
     FormsModule,
     LucideChevronDown,
     LucideX,
+    LucideClock,
     DecimalPipe
   ],
   template: `
@@ -43,7 +45,14 @@ import { catchError, of, Subscription } from 'rxjs';
             </button>
             <div class="nav-logo" (click)="scrollToTop()">
               <img [src]="settings.logoUrl || 'assets/default-logo.png'" alt="Logo" class="mini-logo" *ngIf="settings.logoUrl">
-              <span class="business-name">{{ settings.businessName }}</span>
+              <div class="logo-text-group">
+                <span class="business-name">{{ settings.businessName }}</span>
+                <div class="store-status-pill" [class.status-open]="isOpen" (click)="isScheduleModalOpen = true; $event.stopPropagation()">
+                  <span class="status-dot"></span>
+                  {{ isOpen ? 'Abierto ahora' : 'Cerrado' }}
+                  <svg lucideClock size="10" style="margin-left: 4px;"></svg>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -53,9 +62,18 @@ import { catchError, of, Subscription } from 'rxjs';
           </div>
 
           <div class="nav-actions">
-            <button class="search-btn">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </button>
+            <div class="search-wrapper" [class.active]="isSearchOpen">
+              <input type="text" 
+                     class="search-input" 
+                     [(ngModel)]="productSearchTerm" 
+                     (input)="applyFilters()"
+                     placeholder="Buscar productos..."
+                     #searchInput>
+              <button class="search-btn" (click)="isSearchOpen = !isSearchOpen; isSearchOpen && searchInput.focus()">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" *ngIf="!isSearchOpen"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" *ngIf="isSearchOpen"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
             <button class="nav-cart-btn" (click)="openCart()" [class.cart-pulse]="isCartAnimating">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
               <span class="nav-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
@@ -214,6 +232,10 @@ import { catchError, of, Subscription } from 'rxjs';
                 <img [src]="settings.logoUrl" alt="Logo" class="footer-logo" *ngIf="settings.logoUrl">
                 <span class="footer-business-name">{{ settings.businessName }}</span>
               </div>
+              <p class="footer-address" *ngIf="settings.address">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                {{ settings.address }}
+              </p>
               <div class="footer-socials" *ngIf="settings.socialLinks">
                 <a *ngIf="settings.socialLinks.instagram" [href]="getSocialLink('instagram')" target="_blank" class="social-btn" title="Instagram">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
@@ -375,6 +397,38 @@ import { catchError, of, Subscription } from 'rxjs';
           </footer>
         </div>
       </div>
+
+      <!-- Schedule Modal -->
+      <div class="modal-overlay" *ngIf="isScheduleModalOpen" (click)="isScheduleModalOpen = false">
+        <div class="modal-content glass schedule-modal" (click)="$event.stopPropagation()">
+          <header class="modal-header">
+            <h3>Horario de Atención</h3>
+            <button class="close-btn" (click)="isScheduleModalOpen = false"><svg lucideX size="24"></svg></button>
+          </header>
+          <div class="modal-body">
+            <div class="schedule-list" *ngIf="settings.businessHours">
+              <div *ngFor="let day of settings.businessHours" class="schedule-item" [class.is-today]="isToday(day.day)">
+                <span class="day-label">{{ day.day }}</span>
+                <span class="time-range" *ngIf="day.enabled">{{ day.open }} - {{ day.close }}</span>
+                <span class="time-range closed-text" *ngIf="!day.enabled">Cerrado</span>
+              </div>
+            </div>
+            
+            <div class="address-notice" *ngIf="settings.address">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <span>{{ settings.address }}</span>
+            </div>
+            
+            <div class="status-notice" [class.notice-open]="isOpen">
+              <svg lucideClock size="18"></svg>
+              <span>{{ isOpen ? '¡Estamos atendiendo en este momento!' : 'Actualmente nos encontramos fuera de horario laboral.' }}</span>
+            </div>
+          </div>
+          <footer class="modal-footer">
+            <button class="confirm-btn" (click)="isScheduleModalOpen = false">Entendido</button>
+          </footer>
+        </div>
+      </div>
     </div>
   `,
   styles: [
@@ -440,7 +494,7 @@ import { catchError, of, Subscription } from 'rxjs';
     .main-nav.solid .nav-cat-btn { color: white; }
     .main-nav.solid .nav-badge { background: white; color: var(--primary-color); }
     
-    .nav-container { display: flex; justify-content: space-between; align-items: center; }
+    .nav-container { display: flex; justify-content: space-between; align-items: center; position: relative; }
     .nav-left { display: flex; align-items: center; gap: 15px; }
     
     .nav-logo { display: flex; align-items: center; gap: 12px; cursor: pointer; }
@@ -475,8 +529,76 @@ import { catchError, of, Subscription } from 'rxjs';
     }
     .nav-cat-dropdown a:hover { background: #f4f4f4; color: var(--primary-color); }
     .nav-cat-dropdown .see-all { border-top: 1px solid #f0f0f0; margin-top: 10px; color: var(--primary-color); font-weight: 900; }
+    
+    .search-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      position: relative;
+    }
+    .search-input {
+      width: 0;
+      opacity: 0;
+      padding: 0;
+      border: 2px solid var(--primary-color);
+      border-right: none;
+      border-radius: 12px 0 0 12px;
+      height: 44px;
+      outline: none;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: white;
+    }
+    .search-wrapper.active .search-input {
+      width: 200px;
+      opacity: 1;
+      padding: 0 15px;
+    }
+    .search-wrapper.active .search-btn {
+      border-radius: 0 12px 12px 0;
+    }
+
+    @media (max-width: 768px) {
+      .search-wrapper.active {
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 1100;
+        width: 100%;
+        background: inherit; /* Matches navbar glass/solid */
+        height: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 15px;
+        box-sizing: border-box;
+      }
+      .search-wrapper.active .search-input {
+        width: 100%;
+        border-radius: 100px;
+        border-right: 2px solid var(--primary-color);
+        padding-right: 50px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+      .search-wrapper.active .search-btn {
+        position: absolute;
+        right: 25px;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: var(--primary-color) !important;
+      }
+      .search-wrapper.active .search-btn svg {
+        stroke: var(--primary-color) !important;
+      }
+    }
 
     .nav-actions { display: flex; align-items: center; gap: 10px; }
+    
+    @media (max-width: 768px) {
+      .nav-actions { position: static; }
+    }
+
     .menu-trigger, .search-btn, .nav-cart-btn {
       display: flex;
       width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--primary-color);
@@ -1139,6 +1261,49 @@ import { catchError, of, Subscription } from 'rxjs';
       display: flex; justify-content: space-between; align-items: center;
       color: rgba(255,255,255,0.3); font-size: 0.9rem;
     }
+
+    /* Store Status Badge */
+    .logo-text-group { display: flex; flex-direction: column; line-height: 1.1; }
+    .store-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px; border-radius: 50px; font-size: 0.65rem; font-weight: 800;
+      background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;
+      cursor: pointer; transition: 0.2s; width: fit-content; margin-top: 2px;
+    }
+    .status-open { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .store-status-pill:hover { transform: scale(1.05); }
+
+    /* Schedule Modal */
+    .schedule-modal { max-width: 400px !important; }
+    .schedule-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+    .schedule-item { 
+      display: flex; justify-content: space-between; padding: 12px 15px; 
+      border-radius: 12px; background: #f8fafc; border: 1px solid #eee;
+    }
+    .schedule-item.is-today { background: #f0f7ff; border-color: var(--primary-color); font-weight: 800; }
+    .day-label { color: #64748b; font-weight: 700; }
+    .is-today .day-label { color: var(--primary-color); }
+    .time-range { font-weight: 800; color: #1a1a1a; }
+    .closed-text { color: #ef4444; font-style: italic; }
+    .status-notice {
+      display: flex; align-items: center; gap: 12px; padding: 15px;
+      border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+      background: #f1f5f9; color: #64748b; margin-top: 20px;
+    }
+    .notice-open { background: #f0fdf4; color: #166534; }
+
+    .footer-address {
+      color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: -10px; margin-bottom: 25px;
+      display: flex; align-items: center;
+    }
+
+    .address-notice {
+      display: flex; align-items: center; gap: 12px; padding: 15px;
+      border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+      background: #f8fafc; color: #64748b; border: 1px dashed #cbd5e1;
+      margin-bottom: 15px;
+    }
     `,
   ],
 })
@@ -1159,6 +1324,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
   categorySearchTerm = '';
   cartItems: any[] = [];
   isLoading = true;
+  isOpen = false;
+  isScheduleModalOpen = false;
+  isSearchOpen = false;
+  productSearchTerm = '';
 
   // Cached computed values (avoids method calls in template)
   combinedStyles: any = {};
@@ -1209,6 +1378,14 @@ export class CatalogComponent implements OnInit, OnDestroy {
       this.cartTotal = this.cartService.getTotalPrice();
       this.cdr.markForCheck();
     }));
+
+    // Interval to refresh store status every minute
+    this.ngZone.runOutsideAngular(() => {
+      const timer = setInterval(() => {
+        this.ngZone.run(() => this.checkStoreStatus());
+      }, 60000);
+      this._subs.push(new Subscription(() => clearInterval(timer)));
+    });
   }
 
 
@@ -1267,8 +1444,53 @@ export class CatalogComponent implements OnInit, OnDestroy {
           };
         }
         this.isLoading = false;
+        this.checkStoreStatus();
         this.cdr.markForCheck();
       });
+  }
+
+  checkStoreStatus() {
+    if (!this.settings?.businessHours || this.settings.businessHours.length === 0) {
+      this.isOpen = true;
+      return;
+    }
+
+    const now = new Date();
+    const dayName = now.toLocaleDateString('es-ES', { weekday: 'long' }).toLowerCase();
+    
+    const daysMap: any = {
+      'lunes': 'Lunes', 'martes': 'Martes', 'miércoles': 'Miércoles', 'jueves': 'Jueves',
+      'viernes': 'Viernes', 'sábado': 'Sábado', 'domingo': 'Domingo'
+    };
+
+    const currentDay = this.settings.businessHours.find(d => d.day === daysMap[dayName]);
+    
+    if (!currentDay || !currentDay.enabled) {
+      this.isOpen = false;
+      return;
+    }
+
+    const [openH, openM] = currentDay.open.split(':').map(Number);
+    const [closeH, closeM] = currentDay.close.split(':').map(Number);
+    
+    const openTime = new Date(now);
+    openTime.setHours(openH, openM, 0);
+    
+    const closeTime = new Date(now);
+    closeTime.setHours(closeH, closeM, 0);
+
+    this.isOpen = now >= openTime && now <= closeTime;
+    this.cdr.markForCheck();
+  }
+
+  isToday(day: string): boolean {
+    const now = new Date();
+    const dayName = now.toLocaleDateString('es-ES', { weekday: 'long' }).toLowerCase();
+    const daysMap: any = {
+      'lunes': 'Lunes', 'martes': 'Martes', 'miércoles': 'Miércoles', 'jueves': 'Jueves',
+      'viernes': 'Viernes', 'sábado': 'Sábado', 'domingo': 'Domingo'
+    };
+    return daysMap[dayName] === day;
   }
 
   selectedProduct: Product | null = null;
@@ -1293,11 +1515,18 @@ export class CatalogComponent implements OnInit, OnDestroy {
   applyFilters() {
     this.filteredProducts = this.products.filter((p) => {
       if (p.isActive === false) return false;
-      if (this.activeCategory !== 'Todos') {
-        return p.category === this.activeCategory;
-      }
-      return true;
+      
+      const matchesCategory = this.activeCategory === 'Todos' || p.category === this.activeCategory;
+      
+      const searchLower = this.productSearchTerm.toLowerCase().trim();
+      const matchesSearch = !searchLower || 
+        p.name.toLowerCase().includes(searchLower) || 
+        (p.category && p.category.toLowerCase().includes(searchLower)) ||
+        (p.description && p.description.toLowerCase().includes(searchLower));
+
+      return matchesCategory && matchesSearch;
     });
+    this.cdr.markForCheck();
   }
 
   onAddClick(product: Product, event?: MouseEvent) {

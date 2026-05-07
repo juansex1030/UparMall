@@ -2,7 +2,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '@shared/services/auth.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -170,7 +170,7 @@ export class HomeComponent implements OnDestroy {
     const { data, error } = await this.authService.signIn(this.email, this.password);
     this.loading = false;
     if (error) { this.errorMsg = 'Correo o contraseña incorrectos'; return; }
-    if (data?.session) this.router.navigate(['/admin']);
+    if (data?.session) this.router.navigate(['/']);
   }
 
   async onRegister() {
@@ -212,7 +212,7 @@ export class HomeComponent implements OnDestroy {
     try {
       const { error } = await this.authService.updatePassword(this.password);
       if (error) throw error;
-      this.router.navigate(['/admin']);
+      this.router.navigate(['/']);
     } catch (err: any) {
       this.errorMsg = err.message || 'Error al actualizar contraseña';
     } finally {

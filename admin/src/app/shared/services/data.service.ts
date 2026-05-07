@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Product, Settings } from '../models/models';
@@ -9,7 +9,7 @@ import { Product, Settings } from '../models/models';
 export class DataService {
   private apiUrl = 'http://localhost:3000';
 
-  constructor(private http: HttpClient) {}
+  constructor(@Inject(HttpClient) private http: HttpClient) {}
 
   // Products
   getProductsBySlug(slug: string): Observable<Product[]> {

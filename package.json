@@ -4,7 +4,8 @@
   "scripts": {
     "backend": "cd backend && npm run start:dev",
     "frontend": "cd frontend && npm start",
-    "start": "npx concurrently \"npm run backend\" \"npm run frontend\""
+    "admin": "cd admin && npm start",
+    "start": "npx concurrently \"npm run backend\" \"npm run frontend\" \"npm run admin\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

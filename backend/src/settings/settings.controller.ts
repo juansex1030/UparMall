@@ -16,6 +16,7 @@ export class SettingsController {
   @UseGuards(SupabaseAuthGuard)
   @Get()
   findMySettings(@User() user: any) {
+    console.log('Fetching settings for user:', user.id, user.email);
     return this.settingsService.findByStoreId(user.id);
   }
 

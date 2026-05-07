@@ -33,6 +33,13 @@ export interface HeroSlide {
   subtitle?: string;
 }
 
+export interface BusinessDay {
+  day: string;
+  open: string;
+  close: string;
+  enabled: boolean;
+}
+
 export interface Settings {
   id: number;
   businessName: string;
@@ -47,6 +54,7 @@ export interface Settings {
   slug?: string;
   categories?: string[];
   heroSlides?: HeroSlide[];
+  businessHours?: BusinessDay[];
   // Visual & Brand Configuration
   fontFamily?: string;
   navbarStyle?: 'glass' | 'solid' | 'minimal';
@@ -59,6 +67,7 @@ export interface Settings {
   };
   backgroundImageUrl?: string;
   deliveryFee?: number;
+  address?: string;
 }
 
 export interface CartItem {

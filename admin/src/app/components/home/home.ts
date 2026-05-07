@@ -13,6 +13,7 @@ import { Subscription } from 'rxjs';
     <div class="home-container">
       <div class="glass-panel">
         <div class="brand">
+          <img src="assets/logo-uparmall.png" alt="UparMall Logo" style="width: 80px; height: 80px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
           <h1>UparMall</h1>
           <p>Tu tienda en línea en minutos</p>
         </div>

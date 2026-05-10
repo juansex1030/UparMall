@@ -74,11 +74,11 @@ export class DataService {
     return this.http.get<any[]>(`${this.apiUrl}/orders`);
   }
 
-  updateOrderStatus(orderId: string, status: string): Observable<any> {
+  updateOrderStatus(orderId: string | number, status: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/orders/${orderId}/status`, { status });
   }
 
-  deleteOrder(orderId: string): Observable<any> {
+  deleteOrder(orderId: string | number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/orders/${orderId}`);
   }
 

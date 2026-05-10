@@ -1,0 +1,170 @@
+<div class="admin-container">
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="glass-panel" style="text-align: center; padding: 60px;">
+      <div class="spinner" style="margin: 0 auto 20px;"></div>
+      <h2 style="font-weight: 900; color: #0f172a;">Cargando Panel...</h2>
+      <p style="color: #64748b;">Estamos preparando tu panel de administración</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div class="loading-overlay" *ngIf="!isLoading && !settings">
+    <div class="glass-panel" style="text-align: center; padding: 60px; border-color: #fecaca; background: #fff5f5;">
+      <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ef4444; margin-bottom: 20px;"></i>
+      <h2 style="font-weight: 900; color: #991b1b;">Error de Conexión</h2>
+      <p style="color: #b91c1c; margin-bottom: 30px;">No pudimos conectar con tu servidor local. Asegúrate de que el backend esté corriendo.</p>
+      <button (click)="loadSettings()" class="btn-action btn-dark" style="margin: 0 auto;">
+        Reintentar Conexión
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="settings && !isLoading">
+    <header class="admin-header">
+      <div class="header-main">
+        <div class="header-info">
+          <h2>Panel de Control</h2>
+        </div>
+        <div class="header-actions">
+          <button class="btn-action btn-light" (click)="goToMyStore()">
+            <i class="fas fa-eye" style="margin-right: 8px;"></i> Ver Tienda
+          </button>
+          <button class="btn-action btn-dark" (click)="logout()">
+            <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i> Salir
+          </button>
+        </div>
+      </div>
+
+      <div class="tabs-container">
+        <div class="tabs">
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'products'" 
+            (click)="setActiveTab('products')">
+            <i class="fas fa-box" style="margin-right: 8px;"></i> Mi Inventario
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'orders'" 
+            (click)="setActiveTab('orders')">
+            <i class="fas fa-clipboard-list" style="margin-right: 8px;"></i> Pedidos
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'analytics'" 
+            (click)="setActiveTab('analytics')">
+            <i class="fas fa-chart-line" style="margin-right: 8px;"></i> Estadísticas
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'settings'" 
+            (click)="setActiveTab('settings')">
+            <i class="fas fa-cog" style="margin-right: 8px;"></i> Personalización
+          </button>
+          <button 
+            *ngIf="isSuperAdmin"
+            class="tab-btn" 
+            [class.active]="activeTab === 'master'" 
+            (click)="setActiveTab('master')">
+            <i class="fas fa-user-shield" style="margin-right: 8px;"></i> Master Control
+          </button>
+        </div>
+
+        <button 
+          *ngIf="activeTab === 'settings'"
+          class="preview-toggle" 
+          [class.active]="isPreviewActive"
+          (click)="isPreviewActive = !isPreviewActive">
+          <i class="fas fa-eye" style="margin-right: 8px;"></i> {{ isPreviewActive ? 'Ocultar Vista Previa' : 'Ver Vista Previa' }}
+        </button>
+
+        <button 
+          *ngIf="activeTab === 'products' && !showForm"
+          class="btn-action btn-dark" 
+          (click)="openAddForm()">
+          <i class="fas fa-plus" style="margin-right: 8px;"></i> Nuevo Producto
+        </button>
+      </div>
+    </header>
+    
+    <!-- Integrated Notification Banner -->
+    <div class="toast-wrapper" *ngIf="toast.visible">
+      <div class="toast-pill" [class.toast-error]="toast.isError">
+        <i class="fas" [class.fa-check-circle]="!toast.isError" [class.fa-exclamation-circle]="toast.isError"></i>
+        <span>{{ toast.message }}</span>
+      </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div [ngSwitch]="activeTab">
+      <div *ngSwitchCase="'products'">
+        <app-inventory 
+          *ngIf="!showForm"
+          [products]="products"
+          [categories]="categories"
+          (edit)="editProduct($event)"
+          (delete)="deleteProduct($event)"
+          (add)="openAddForm()">
+        </app-inventory>
+
+        <app-product-form
+          *ngIf="showForm"
+          [product]="currentProduct"
+          [editingProduct]="editingProduct"
+          [isSaving]="isSaving"
+          (save)="saveProduct()"
+          (close)="closeForm()"
+          (uploadImage)="onProductImageUpload($event)">
+        </app-product-form>
+      </div>
+
+      <div *ngSwitchCase="'orders'">
+        <app-orders
+          [orders]="orders"
+          (statusChange)="changeStatus($event.order, $event.status)"
+          (viewDetails)="viewOrderDetails($event)"
+          (delete)="deleteOrder($event)"
+          (refresh)="loadOrders()">
+        </app-orders>
+      </div>
+
+      <div *ngSwitchCase="'analytics'">
+        <app-analytics></app-analytics>
+      </div>
+
+      <div *ngSwitchCase="'settings'">
+        <app-settings
+          [settings]="settings"
+          [products]="products"
+          [isPreviewActive]="isPreviewActive"
+          (save)="saveSettings()"
+          (updatePreview)="updatePreview()"
+          (uploadLogo)="onImageUpload($event, 'logo')"
+          (addSlide)="addSlide()"
+          (removeSlide)="removeSlide($event)"
+          (uploadSlide)="onSlideImageUpload($event.event, $event.index)">
+        </app-settings>
+      </div>
+
+      <div *ngSwitchCase="'master'">
+        <app-master-control
+          *ngIf="isSuperAdmin"
+          [stores]="masterStores"
+          [orders]="masterOrders"
+          (viewStore)="viewStore($event)"
+          (refresh)="loadMasterData()">
+        </app-master-control>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <app-order-detail-modal
+      *ngIf="selectedOrder"
+      [order]="selectedOrder"
+      (close)="selectedOrder = null">
+    </app-order-detail-modal>
+
+
+  </div>
+</div>

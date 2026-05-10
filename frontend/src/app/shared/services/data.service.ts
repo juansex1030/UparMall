@@ -59,4 +59,9 @@ export class DataService {
   getMasterStores(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/master/stores`);
   }
+
+  // Orders
+  createOrder(order: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/orders`, order);
+  }
 }

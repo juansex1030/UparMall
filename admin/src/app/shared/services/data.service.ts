@@ -60,4 +60,29 @@ export class DataService {
   getMasterStores(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/master/stores`);
   }
+
+  getMasterOrders(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/master/orders`);
+  }
+
+  // Orders
+  createOrder(order: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/orders`, order);
+  }
+
+  getMyOrders(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/orders`);
+  }
+
+  updateOrderStatus(orderId: string, status: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/orders/${orderId}/status`, { status });
+  }
+
+  deleteOrder(orderId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/orders/${orderId}`);
+  }
+
+  getOrderStats(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/orders/stats`);
+  }
 }

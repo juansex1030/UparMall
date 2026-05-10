@@ -51,6 +51,7 @@ export interface Settings {
   whatsappNumber: string;
   welcomeMessage: string;
   description?: string;
+  storeId: string;
   slug?: string;
   categories?: string[];
   heroSlides?: HeroSlide[];

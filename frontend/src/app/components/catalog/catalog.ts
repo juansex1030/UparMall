@@ -42,7 +42,9 @@ import { catchError, of, Subscription } from 'rxjs';
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
             <div class="nav-logo" (click)="scrollToTop()">
-              <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" alt="Logo" class="mini-logo" *ngIf="settings.logoUrl">
+              <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" 
+                   (error)="$event.target.src = '/assets/logo-uparmall.png'"
+                   alt="Logo" class="mini-logo">
               <div class="logo-text-group">
                 <span class="business-name">{{ settings.businessName }}</span>
                 <div class="store-status-pill" [class.status-open]="isOpen" (click)="isScheduleModalOpen = true; $event.stopPropagation()">
@@ -179,8 +181,9 @@ import { catchError, of, Subscription } from 'rxjs';
         <div class="container">
           <div class="products-grid">
             <div class="glass-card" *ngFor="let product of filteredProducts" [class.just-added]="justAddedId === product.id">
-              <div class="card-image-wrapper" (click)="onAddClick(product, $event)">
-                <img [src]="product.imageUrl || 'assets/placeholder.png'" 
+              <div class="card-image-wrapper" (click)="openProductDetails(product)">
+                <img [src]="product.imageUrl || '/assets/logo-uparmall.png'" 
+                     (error)="$event.target.src = '/assets/logo-uparmall.png'"
                      [alt]="product.name" 
                      loading="lazy"
                      #img
@@ -215,8 +218,10 @@ import { catchError, of, Subscription } from 'rxjs';
             <h2 class="section-title">Sobre Nosotros</h2>
             <p class="about-text">{{ settings.description }}</p>
           </div>
-          <div class="about-decoration" *ngIf="settings.logoUrl">
-            <img [src]="settings.logoUrl" alt="Store Brand">
+          <div class="about-decoration">
+            <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" 
+                 (error)="$event.target.src = '/assets/logo-uparmall.png'"
+                 alt="Store Brand">
           </div>
         </div>
       </section>
@@ -227,7 +232,9 @@ import { catchError, of, Subscription } from 'rxjs';
           <div class="footer-grid">
             <div class="footer-brand">
               <div class="footer-logo-wrap">
-                <img [src]="settings.logoUrl" alt="Logo" class="footer-logo" *ngIf="settings.logoUrl">
+                <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" 
+                     (error)="$event.target.src = '/assets/logo-uparmall.png'"
+                     alt="Logo" class="footer-logo">
                 <span class="footer-business-name">{{ settings.businessName }}</span>
               </div>
               <p class="footer-address" *ngIf="settings.address">
@@ -290,11 +297,41 @@ import { catchError, of, Subscription } from 'rxjs';
           </header>
 
           <div class="modal-body">
-            <div class="modal-preview-image" *ngIf="selectedProduct">
-              <img [src]="displayImage" class="main-preview" />
+            <div class="product-main-info">
+              <div class="modal-preview-image" *ngIf="selectedProduct && selectedProduct.imageUrl">
+                <img [src]="displayImage" class="main-preview" />
+              </div>
+
+              <!-- VARIANTS (Moved Up) -->
+              <div class="variants-container" *ngIf="selectedProduct.variants?.length">
+                <div class="variant-item" *ngFor="let variant of selectedProduct.variants">
+                  <div class="variant-header">
+                    <h4>{{ variant.name }}</h4>
+                    <span class="selected-val" *ngIf="tempOptions[variant.name || '']">
+                      {{ tempOptions[variant.name || '']?.label }}
+                    </span>
+                  </div>
+                  <div class="options-grid">
+                    <button
+                      *ngFor="let opt of variant.options"
+                      class="option-pill"
+                      [class.selected]="tempOptions[variant.name || '']?.label === opt.label"
+                      [class.sold-out]="opt.isAvailable === false"
+                      [disabled]="opt.isAvailable === false"
+                      (click)="selectOption(variant.name, opt)"
+                    >
+                      <span class="label">{{ opt.label }}</span>
+                      <span class="extra" *ngIf="opt.price > 0 && opt.isAvailable !== false"
+                        >+ $ {{ opt.price | number }}</span
+                      >
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="specs-section" *ngIf="selectedProduct.specifications?.length">
+            <!-- SPECIFICATIONS (Priority) -->
+            <div class="specs-section" *ngIf="selectedProduct.specifications?.length; else descriptionBlock">
               <h4>Especificaciones Técnicas</h4>
               <div class="specs-table glass">
                 <div class="spec-item" *ngFor="let spec of selectedProduct.specifications">
@@ -304,25 +341,15 @@ import { catchError, of, Subscription } from 'rxjs';
               </div>
             </div>
 
-            <div class="variant-item" *ngFor="let variant of selectedProduct.variants">
-              <h4>{{ variant.name }}</h4>
-              <div class="options-grid">
-                <button
-                  *ngFor="let opt of variant.options"
-                  class="option-pill"
-                  [class.selected]="tempOptions[variant.name || '']?.label === opt.label"
-                  [class.sold-out]="opt.isAvailable === false"
-                  [disabled]="opt.isAvailable === false"
-                  (click)="selectOption(variant.name, opt)"
-                >
-                  <span class="label">{{ opt.label }}</span>
-                  <span class="extra" *ngIf="opt.price > 0 && opt.isAvailable !== false"
-                    >$ {{ opt.price | number }}</span
-                  >
-                  <span class="sold-out-badge" *ngIf="opt.isAvailable === false">Agotado</span>
-                </button>
+            <!-- DESCRIPTION (Only if no specs) -->
+            <ng-template #descriptionBlock>
+              <div class="description-section" *ngIf="selectedProduct.description">
+                <h4>Descripción</h4>
+                <div class="description-content">
+                  <p>{{ selectedProduct.description }}</p>
+                </div>
               </div>
-            </div>
+            </ng-template>
           </div>
 
           <footer class="modal-footer">
@@ -355,7 +382,9 @@ import { catchError, of, Subscription } from 'rxjs';
             <div class="cart-drawer-items" *ngIf="cartItems.length > 0">
               <div class="cart-drawer-item" *ngFor="let item of cartItems">
                 <div class="item-img-box">
-                  <img [src]="getItemImage(item)" [alt]="item.product.name">
+                  <img [src]="getItemImage(item) || '/assets/logo-uparmall.png'" 
+                       (error)="$event.target.src = '/assets/logo-uparmall.png'"
+                       [alt]="item.product.name">
                 </div>
                 <div class="item-info">
                   <h4>{{ item.product.name }}</h4>
@@ -886,27 +915,26 @@ import { catchError, of, Subscription } from 'rxjs';
       }
       .nav-container { max-width: 100%; width: 100%; padding: 0; }
       .nav-center { display: none !important; } /* Hidden on mobile to avoid overcrowding */
-      .nav-left { gap: 10px; }
-      .mini-logo { width: 32px; height: 32px; }
-      .business-name { font-size: 1rem; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
-      
-      .nav-actions { gap: 6px; }
-      .menu-trigger, .search-btn, .nav-cart-btn { width: 40px; height: 40px; border-width: 1.5px; }
+      .nav-actions { gap: 4px; }
+      .menu-trigger, .search-btn, .nav-cart-btn { width: 38px; height: 38px; border-width: 1.5px; border-radius: 10px; }
+      .mini-logo { width: 30px; height: 30px; border-radius: 8px; }
+      .business-name { font-size: 0.95rem; max-width: 120px; }
+      .status-pill { font-size: 0.6rem; padding: 2px 6px; }
       
       .hero-slider { height: 320px; }
       .hero-title { font-size: 2.4rem; margin-bottom: 0.8rem; }
       .hero-subtitle { font-size: 0.95rem; margin-bottom: 1.5rem; }
       .shop-now-btn { padding: 1rem 2rem; font-size: 0.85rem; }
 
-      .category-ribbon { top: 60px; padding: 8px 0; }
-      .ribbon-container { gap: 10px; }
-      .ribbon-inner { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+      .category-ribbon { top: 58px; padding: 12px 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+      .ribbon-container { gap: 12px; padding: 0 15px; }
+      .ribbon-inner { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; gap: 10px; }
       .ribbon-item { 
-        padding: 8px 16px; font-size: 0.8rem; 
-        scroll-snap-align: start;
+        padding: 10px 22px; font-size: 0.85rem; font-weight: 800;
+        scroll-snap-align: start; border-radius: 12px;
       }
-      .btn-ribbon-expand { padding: 8px 12px; font-size: 0.75rem; }
-      .btn-ribbon-expand span { display: none; } /* Hide text on small mobile */
+      .btn-ribbon-expand { padding: 10px 14px; font-size: 0.8rem; border-radius: 12px; }
+      .btn-ribbon-expand span { display: none; }
 
       .ribbon-expanded-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding-top: 15px; }
       .grid-cat-item { padding: 12px; font-size: 0.8rem; }
@@ -976,23 +1004,56 @@ import { catchError, of, Subscription } from 'rxjs';
       border-radius: 30px; display: flex; flex-direction: column; overflow: hidden;
       transform: translateZ(0);
     }
-    .modal-header { padding: 25px 30px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
     .close-btn { padding: 0 !important; min-height: unset !important; width: 40px; height: 40px; background: #f4f4f4; border-radius: 10px; overflow: visible; }
     .modal-body { 
-      padding: 30px; overflow-y: auto; flex: 1;
+      padding: 20px; overflow-y: auto; flex: 1;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
     }
-    .modal-preview-image { width: 100%; max-height: 250px; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; margin-bottom: 25px; background: #f8f8f8; border-radius: 15px; overflow: hidden; }
-    .modal-preview-image img { width: 100%; height: 100%; object-fit: contain; }
-    .specs-table { background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 25px; }
-    .spec-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-    .spec-key { font-weight: 700; color: #666; }
-    .spec-value { font-weight: 900; }
-    .option-pill { padding: 12px 20px; border-radius: 12px; border: 2px solid #eee; background: white; font-weight: 700; cursor: pointer; }
-    .option-pill.selected { border-color: var(--primary-color); background: rgba(var(--primary-color-rgb), 0.05); }
-    .option-pill.sold-out { opacity: 0.5; cursor: not-allowed; }
-    .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .modal-preview-image { 
+      width: 100%; 
+      aspect-ratio: 1/1;
+      max-height: 280px;
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin-bottom: 15px; 
+      background: #f8fafc; 
+      border-radius: 24px; 
+      overflow: hidden; 
+      border: 1px solid #f1f5f9; 
+    }
+    .modal-preview-image img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+    
+    .variant-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .variant-header h4 { margin: 0; font-size: 0.9rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .selected-val { font-size: 0.9rem; font-weight: 800; color: var(--primary-color); background: #f0f4ff; padding: 4px 12px; border-radius: 8px; }
+
+    .specs-section { margin-top: 10px; }
+    .specs-section h4 { font-size: 1.1rem; font-weight: 900; margin-bottom: 15px; }
+
+    .description-section { margin-top: 10px; }
+    .description-section h4 { font-size: 1.1rem; font-weight: 900; margin-bottom: 15px; }
+    .description-content p { font-size: 0.95rem; line-height: 1.6; color: #444; margin: 0; white-space: pre-line; }
+    .specs-section h4 { font-size: 1.1rem; font-weight: 900; margin-bottom: 15px; }
+    .specs-table { background: #f8fafc; padding: 20px; border-radius: 20px; border: 1px solid #f1f5f9; }
+    .spec-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+    .spec-item:last-child { border-bottom: none; }
+    .spec-key { font-weight: 600; color: #64748b; font-size: 0.9rem; }
+    .spec-value { font-weight: 800; color: #1a1a1a; font-size: 0.9rem; }
+
+    .option-pill { 
+      padding: 12px 16px; border-radius: 12px; border: 2px solid #f1f5f9; 
+      background: white; font-weight: 700; cursor: pointer; transition: 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .option-pill .label { font-size: 0.95rem; }
+    .option-pill .extra { font-size: 0.75rem; opacity: 0.6; }
+    .option-pill.selected { border-color: var(--primary-color); background: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .option-pill:hover:not(.selected):not(.sold-out) { border-color: #cbd5e1; background: #f8fafc; }
+    .option-pill.sold-out { opacity: 0.4; cursor: not-allowed; background: #f1f5f9; text-decoration: line-through; }
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
     
     .modal-footer { padding: 25px 30px; background: #fafafa; border-top: 1px solid #f0f0f0; }
     .confirm-btn { width: 100%; height: 54px; background: #1a1a1a; color: white; border-radius: 15px; font-weight: 900; cursor: pointer; }
@@ -1326,6 +1387,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   isScheduleModalOpen = false;
   isSearchOpen = false;
   productSearchTerm = '';
+  showFullDescription = false;
 
   // Cached computed values (avoids method calls in template)
   combinedStyles: any = {};
@@ -1479,17 +1541,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
   selectedProduct: Product | null = null;
   tempOptions: { [key: string]: any } = {};
 
-  getCombinedStyles() {
-    if (!this.settings) return {};
-    const styles: any = {
-      'font-family': this.settings.fontFamily || "'Inter', sans-serif"
-    };
-    if (this.settings.backgroundColor) {
-      styles['background-color'] = this.settings.backgroundColor;
-    }
-    return styles;
-  }
-
   setCategory(cat: string) {
     this.activeCategory = cat;
     this.applyFilters();
@@ -1513,17 +1564,21 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   onAddClick(product: Product, event?: MouseEvent) {
-    if (
-      (product.variants && product.variants.length > 0) ||
-      (product.specifications && product.specifications.length > 0)
-    ) {
-      this.selectedProduct = product;
-      this.tempOptions = {};
-      this._updateModalState();
-      this._pauseSlider(); // stop slider while modal is open
+    // Buttons still trigger quick-add if no variants are needed
+    if (product.variants && product.variants.length > 0) {
+      this.openProductDetails(product);
     } else {
       this.onQuickAdd(product, event);
     }
+  }
+
+  openProductDetails(product: Product) {
+    this.selectedProduct = product;
+    this.showFullDescription = false;
+    this.tempOptions = {};
+    this._updateModalState();
+    this._pauseSlider(); 
+    this.cdr.markForCheck();
   }
 
   onQuickAdd(product: Product, event?: MouseEvent) {
@@ -1761,6 +1816,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   // Slider methods
   startAutoSlide() {
+    if (this.autoSlideTimer) clearInterval(this.autoSlideTimer);
     this.ngZone.runOutsideAngular(() => {
       this.autoSlideTimer = setInterval(() => {
         this.ngZone.run(() => this.nextSlide());
@@ -1771,12 +1827,14 @@ export class CatalogComponent implements OnInit, OnDestroy {
   nextSlide() {
     if (!this.heroSlides || this.heroSlides.length === 0) return;
     this.currentSlide = (this.currentSlide + 1) % this.heroSlides.length;
+    this.cdr.markForCheck();
   }
 
   setSlide(index: number) {
     this.currentSlide = index;
-    clearInterval(this.autoSlideTimer);
+    if (this.autoSlideTimer) clearInterval(this.autoSlideTimer);
     this.startAutoSlide();
+    this.cdr.markForCheck();
   }
 
   scrollToAbout() {

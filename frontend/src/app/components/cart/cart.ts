@@ -90,9 +90,15 @@ import { Subscription } from 'rxjs';
           <!-- Pickup Info Form (Only for pickup) -->
           <div class="shipping-form" *ngIf="deliveryMethod === 'pickup'">
             <h4>Datos de quien retira</h4>
-            <div class="form-group">
-              <label>Nombre del cliente</label>
-              <input type="text" [(ngModel)]="pickupName" placeholder="Nombre completo">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nombre del cliente</label>
+                <input type="text" [(ngModel)]="pickupName" placeholder="Nombre completo">
+              </div>
+              <div class="form-group">
+                <label>Número de contacto</label>
+                <input type="tel" [(ngModel)]="pickupPhone" placeholder="Ej: 300 123 4567">
+              </div>
             </div>
           </div>
 
@@ -217,11 +223,42 @@ import { Subscription } from 'rxjs';
     .form-group input:focus { border-color: var(--primary-color); outline: none; }
 
     @media (max-width: 600px) {
-      .cart-content { padding: 20px; margin-bottom: 40px; }
-      .form-grid { grid-template-columns: 1fr; }
+      .cart-container { padding: 10px 0; }
+      .cart-content { padding: 20px 15px; margin-bottom: 20px; border-radius: 20px; }
+      h2 { font-size: 1.5rem; margin-bottom: 20px; }
+      
+      .cart-item { gap: 12px; padding: 12px 0; }
+      .item-img { width: 50px; height: 50px; border-radius: 10px; }
+      .item-details h4 { font-size: 0.95rem; line-height: 1.2; }
+      .item-price { font-size: 0.9rem; font-weight: 900; }
+      
+      .quantity-controls { gap: 8px; }
+      .quantity-controls button { width: 30px; height: 30px; }
+      
+      .delivery-options h4 { font-size: 1rem; margin-bottom: 12px; }
+      .radio-label { padding: 10px; }
+      .radio-label span { font-size: 0.95rem; }
+      
+      .shipping-form { padding: 15px; }
+      .form-grid { grid-template-columns: 1fr; gap: 12px; }
       .form-group.full-width { grid-column: span 1; }
-      .payment-grid { grid-template-columns: 1fr; }
-      .payment-pill { flex-direction: row; padding: 12px 20px; justify-content: flex-start; gap: 15px; }
+      
+      .payment-grid { grid-template-columns: 1fr; gap: 8px; }
+      .payment-pill { 
+        flex-direction: row; 
+        padding: 14px 18px !important; 
+        justify-content: flex-start; 
+        gap: 15px; 
+        border-radius: 14px;
+      }
+      .payment-icon { font-size: 1.2rem; }
+      .payment-pill span:not(.payment-icon) { font-size: 0.9rem; }
+      
+      .summary-box { padding: 15px; margin-top: 20px; }
+      .summary-row { font-size: 0.95rem; }
+      .total-row { font-size: 1.25rem; }
+      
+      .whatsapp-btn { height: 60px; font-size: 1rem; border-radius: 16px; }
     }
   `]
 })
@@ -235,6 +272,7 @@ export class CartComponent implements OnInit, OnDestroy {
   deliveryFee = 0;
   shippingInfo = { name: '', address: '', neighborhood: '', phone: '' };
   pickupName = '';
+  pickupPhone = '';
   paymentMethod: 'efectivo' | 'transferencia' | 'contraentrega' = 'efectivo';
   isSending = false;
   private _subs = new Subscription();
@@ -319,27 +357,63 @@ export class CartComponent implements OnInit, OnDestroy {
     if (this.deliveryMethod === 'delivery') {
       return this.isShippingValid();
     } else {
-      return !!this.pickupName;
+      return !!(this.pickupName && this.pickupPhone);
     }
   }
 
   sendOrder() {
     if (this.isSending || !this.settings) return;
     this.isSending = true;
-    const link = this.cartService.generateWhatsAppLink(
-      this.settings,
-      this.deliveryMethod,
-      this.deliveryFee,
-      this.deliveryMethod === 'delivery' ? this.shippingInfo : undefined,
-      this.paymentMethod,
-      this.deliveryMethod === 'pickup' ? this.pickupName : undefined
-    );
-    if (link) {
-      // Use location.href instead of window.open to avoid popup blockers on mobile
-      this.cartService.clearCart();
-      window.location.href = link;
-    }
-    setTimeout(() => this.isSending = false, 3000);
+
+    // 1. Preparar datos para la base de datos
+    const orderData = {
+      storeId: this.settings.storeId,
+      customerName: this.deliveryMethod === 'delivery' ? this.shippingInfo.name : this.pickupName,
+      customerPhone: this.deliveryMethod === 'delivery' ? this.shippingInfo.phone : this.pickupPhone,
+      customerAddress: this.deliveryMethod === 'delivery' 
+        ? `${this.shippingInfo.address}, ${this.shippingInfo.neighborhood}` 
+        : 'Recogida en tienda',
+      total: this.finalTotal,
+      paymentMethod: this.paymentMethod,
+      notes: this.deliveryMethod === 'delivery' ? `Barrio: ${this.shippingInfo.neighborhood}` : '',
+      items: this.items.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        price: this.getItemUnitPrice(item),
+        quantity: item.quantity,
+        options: item.selectedOptions
+      }))
+    };
+
+    // 2. Guardar en la base de datos primero
+    this.dataService.createOrder(orderData).subscribe({
+      next: () => {
+        // 3. Generar link y enviar a WhatsApp
+        const link = this.cartService.generateWhatsAppLink(
+          this.settings!,
+          this.deliveryMethod,
+          this.deliveryFee,
+          this.deliveryMethod === 'delivery' ? this.shippingInfo : undefined,
+          this.paymentMethod,
+          this.deliveryMethod === 'pickup' ? this.pickupName : undefined
+        );
+        
+        if (link) {
+          console.log('Pedido guardado. Redirigiendo a WhatsApp:', link);
+          this.cartService.clearCart();
+          // Usamos window.open para mejor compatibilidad y evitar bloqueos
+          window.open(link, '_blank');
+        } else {
+          console.error('No se pudo generar el enlace de WhatsApp (¿carrito vacío?)');
+        }
+        this.isSending = false;
+      },
+      error: (err: any) => {
+        console.error('Error al guardar el pedido:', err);
+        alert('Hubo un error al procesar tu pedido. Por favor intenta de nuevo.');
+        this.isSending = false;
+      }
+    });
   }
 
   goBack() {

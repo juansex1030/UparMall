@@ -222,6 +222,12 @@ export class CartService {
     const message = lines.join(NL);
 
     let phone = settings.whatsappNumber.replace(/\D/g, '');
+    
+    // Asegurar código de país 57 si es un número de Colombia (empieza por 3) y no lo tiene
+    if (phone.length === 10 && phone.startsWith('3')) {
+      phone = '57' + phone;
+    }
+    
     return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
   }
 }

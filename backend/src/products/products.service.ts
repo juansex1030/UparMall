@@ -13,6 +13,7 @@ export class ProductsService {
     const now = new Date().toISOString();
     const payload = {
       ...createProductDto,
+      name: createProductDto.name?.trim(),
       storeId,
       isActive: createProductDto.isActive ?? true,
       category: createProductDto.category ?? 'General',

@@ -10,40 +10,55 @@ export class MasterController {
 
   constructor(private readonly supabase: SupabaseService) {}
 
-  @Get('stores')
-  async getAllStores(@User() user: any) {
-    // Verificar si el usuario es un Super Admin
+  /**
+   * Helper to verify super-admin permissions
+   */
+  private checkSuperAdmin(user: any) {
     if (!this.adminEmails.includes(user.email)) {
       throw new UnauthorizedException('No tienes permisos de Super Administrador');
     }
+  }
 
-    // Obtener todas las tiendas
-    const { data: stores, error: storesError } = await this.supabase.client
+  @Get('stores')
+  async getAllStores(@User() user: any) {
+    this.checkSuperAdmin(user);
+
+    const { data: stores, error: storesError } = await this.supabase.adminClient
       .from('Stores')
       .select('*')
       .order('createdAt', { ascending: false });
 
     if (storesError) throw storesError;
 
-    // Obtener todos los usuarios de Auth para cruzar los correos
-    // Nota: listUsers() requiere la service_role key, que ya configuramos en el SupabaseService
     const { data: { users }, error: authError } = await this.supabase.adminClient.auth.admin.listUsers();
     
     if (authError) {
-      console.error('Error listando usuarios de auth:', authError);
-      // Si falla la lista de auth, devolvemos las tiendas sin el correo para no bloquear
+      console.error('Master Error (Auth List):', authError);
       return stores;
     }
 
-    // Cruzar información
-    const enrichedStores = stores.map(store => {
-      const owner = (users as any[]).find(u => u.id === store.id);
-      return {
-        ...store,
-        ownerEmail: owner ? owner.email : 'N/A'
-      };
-    });
+    return stores.map(store => ({
+      ...store,
+      ownerEmail: (users as any[]).find(u => u.id === store.id)?.email || 'N/A'
+    }));
+  }
 
-    return enrichedStores;
+  @Get('orders')
+  async getAllOrders(@User() user: any) {
+    this.checkSuperAdmin(user);
+
+    // Using 'Orders' as the primary table with the correct relation and field names
+    const { data, error } = await this.supabase.adminClient
+      .from('Orders')
+      .select('*, Stores:store_id ( slug ), OrderItems ( * )')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Master Orders Error:', error);
+      return [];
+    }
+    
+    return data || [];
   }
 }

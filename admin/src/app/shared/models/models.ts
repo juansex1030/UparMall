@@ -42,6 +42,7 @@ export interface BusinessDay {
 
 export interface Settings {
   id: number;
+  storeId: string;
   businessName: string;
   logoUrl?: string;
   primaryColor: string;
@@ -68,6 +69,31 @@ export interface Settings {
   backgroundImageUrl?: string;
   deliveryFee?: number;
   address?: string;
+}
+
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  product_id: number;
+  product_name: string;
+  price: number;
+  quantity: number;
+  options?: any;
+}
+
+export interface Order {
+  id: number;
+  store_id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_address?: string;
+  total: number;
+  payment_method: string;
+  notes?: string;
+  status: 'pendiente' | 'confirmado' | 'en_camino' | 'entregado' | 'cancelado';
+  created_at: string;
+  updated_at: string;
+  OrderItems?: OrderItem[];
 }
 
 export interface CartItem {

@@ -1,7 +1,8 @@
-import { IsString, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, MinLength } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
+  @MinLength(1, { message: 'El nombre del producto no puede estar vacío' })
   name: string;
 
   @IsString()
@@ -9,6 +10,7 @@ export class CreateProductDto {
   description?: string;
 
   @IsNumber()
+  @Min(1, { message: 'El precio debe ser mayor a 0' })
   price: number;
 
   @IsString()

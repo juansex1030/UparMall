@@ -36,6 +36,11 @@ import { Product } from '@shared/models/models';
               <span class="badge" [class.badge-active]="product.isActive" [class.badge-inactive]="!product.isActive">
                 {{ product.isActive ? 'Activo' : 'Inactivo' }}
               </span>
+              <span *ngIf="product.manageStock" class="badge" 
+                    [class.badge-stock-ok]="product.stock! > (product.lowStockThreshold || 5)" 
+                    [class.badge-stock-low]="product.stock! <= (product.lowStockThreshold || 5)">
+                <i class="fas fa-cubes"></i> {{ product.stock! <= (product.lowStockThreshold || 5) ? 'Bajo Stock: ' : 'Stock: ' }} {{ product.stock }}
+              </span>
             </div>
           </div>
           <div class="card-details">
@@ -113,6 +118,14 @@ import { Product } from '@shared/models/models';
     .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; }
     .badge-active { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .badge-inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-stock-ok { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; margin-left: 5px; }
+    .badge-stock-low { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; margin-left: 5px; animation: pulse-warn 2s infinite; }
+    
+    @keyframes pulse-warn {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
 
     .card-details { padding: 15px; flex: 1; display: flex; flex-direction: column; }
     .card-details h4 { margin: 0 0 6px; font-size: 1rem; font-weight: 900; color: #0f172a; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

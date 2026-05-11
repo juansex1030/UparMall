@@ -88,7 +88,7 @@ import { DataService } from '../../../shared/services/data.service';
                 <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px;">/{{ store.slug }}</code></td>
                 <td>{{ store.ownerEmail }}</td>
                 <td>
-                  <button class="btn-action btn-light" style="padding: 6px 12px; font-size: 0.8rem;" (click)="viewStore.emit(store.slug)">
+                  <button class="btn-action" (click)="viewStore.emit(store.slug)">
                     <i class="fas fa-external-link-alt" style="margin-right: 6px;"></i> Visitar
                   </button>
                 </td>
@@ -166,14 +166,23 @@ import { DataService } from '../../../shared/services/data.service';
     .msg-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-    .table-wrapper { background: white; border-radius: 16px; overflow: hidden; }
-    .master-table { width: 100%; border-collapse: collapse; }
+    .table-wrapper { background: white; border-radius: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .master-table { width: 100%; border-collapse: collapse; min-width: 600px; }
     .master-table th { background: #f8fafc; padding: 16px 24px; text-align: left; font-size: 0.75rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; }
     .master-table td { padding: 16px 24px; border-top: 1px solid #f1f5f9; font-weight: 700; color: #334155; }
 
     .admin-table { width: 100%; border-collapse: collapse; min-width: 800px; }
     .admin-table th { background: #f8fafc; padding: 20px 25px; text-align: left; font-size: 0.75rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; }
     .admin-table td { padding: 20px 25px; border-top: 1px solid #f1f5f9; }
+
+    .tab-btn { flex: 0 0 auto; padding: 10px 20px !important; font-size: 0.9rem; white-space: nowrap; }
+
+    .s-nav-item { 
+      padding: 12px 24px; border-radius: 14px; border: none; background: #f8fafc; color: #64748b; font-weight: 800; cursor: pointer; display: flex; align-items: center; transition: 0.2s; font-size: 0.9rem; flex-shrink: 0; white-space: nowrap;
+    }
+    .s-nav-item i { font-size: 18px; }
+    .s-nav-item:hover { background: #f1f5f9; color: #0f172a; }
+    .s-nav-item.active { background: #0f172a; color: white; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2); }
 
     .btn-action {
       padding: 12px 24px; border-radius: 16px; font-weight: 700; font-size: 0.95rem; cursor: pointer;
@@ -182,6 +191,12 @@ import { DataService } from '../../../shared/services/data.service';
     .btn-light { background: white; border-color: #e2e8f0; color: #64748b; }
 
     .badge { padding: 4px 8px; border-radius: 6px; background: #f1f5f9; color: #475569; font-weight: 900; font-size: 0.65rem; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; gap: 15px; }
+      .btn-create { padding: 18px; font-size: 1.1rem; }
+      .stat-row { grid-template-columns: 1fr; gap: 15px; }
+    }
   `]
 })
 export class MasterControlComponent {

@@ -30,4 +30,16 @@ export class CreateProductDto {
 
   @IsOptional()
   specifications?: any[];
+
+  @IsBoolean()
+  @IsOptional()
+  manageStock?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  stock?: number;
+
+  @IsNumber()
+  @IsOptional()
+  lowStockThreshold?: number;
 }

@@ -12,25 +12,25 @@ import { Settings, Product } from '@shared/models/models';
       <div class="settings-layout" *ngIf="settings">
         <div class="settings-sidebar">
           <button class="s-nav-item" [class.active]="activeSection === 'general'" (click)="activeSection = 'general'">
-            <i class="fas fa-info-circle" style="margin-right: 12px;"></i> Información
+            <i class="fas fa-info-circle"></i> Información
           </button>
           <button class="s-nav-item" [class.active]="activeSection === 'colors'" (click)="activeSection = 'colors'">
-            <i class="fas fa-palette" style="margin-right: 12px;"></i> Apariencia
+            <i class="fas fa-palette"></i> Apariencia
           </button>
           <button class="s-nav-item" [class.active]="activeSection === 'hero'" (click)="activeSection = 'hero'">
-            <i class="fas fa-images" style="margin-right: 12px;"></i> Banners
+            <i class="fas fa-images"></i> Banners
           </button>
           <button class="s-nav-item" [class.active]="activeSection === 'social'" (click)="activeSection = 'social'">
-            <i class="fas fa-share-alt" style="margin-right: 12px;"></i> Redes
+            <i class="fas fa-share-alt"></i> Redes
           </button>
           <button class="s-nav-item" [class.active]="activeSection === 'horarios'" (click)="activeSection = 'horarios'">
-            <i class="fas fa-clock" style="margin-right: 12px;"></i> Horarios
+            <i class="fas fa-clock"></i> Horarios
           </button>
           <button class="s-nav-item" [class.active]="activeSection === 'security'" (click)="activeSection = 'security'">
-            <i class="fas fa-lock" style="margin-right: 12px;"></i> Seguridad
+            <i class="fas fa-lock"></i> Seguridad
           </button>
-          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-            <button class="btn-action btn-dark" style="width: 100%" (click)="save.emit()">
+          <div style="margin-top: 10px; padding-top: 20px; border-top: 1px solid #f1f5f9; grid-column: 1 / -1;">
+            <button class="btn-action btn-dark" style="width: 100%; justify-content: center;" (click)="save.emit()">
               <i class="fas fa-save" style="margin-right: 10px;"></i> Guardar Todo
             </button>
           </div>
@@ -353,22 +353,20 @@ import { Settings, Product } from '@shared/models/models';
     /* Sidebar styling */
     .settings-sidebar { 
       background: white; 
-      padding: 12px; 
-      border-radius: 20px; 
+      padding: 15px; 
+      border-radius: 24px; 
       border: 1px solid #e2e8f0; 
-      display: flex; 
-      overflow-x: auto; 
-      gap: 10px; 
-      scrollbar-width: none;
+      display: grid; 
+      grid-template-columns: 1fr 1fr;
+      gap: 12px; 
       position: sticky;
       top: 0;
       z-index: 1000;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
-    .settings-sidebar::-webkit-scrollbar { display: none; }
     
     .s-nav-item { 
-      padding: 12px 20px; 
+      padding: 15px 25px; 
       border-radius: 14px; 
       border: none; 
       background: #f8fafc; 
@@ -376,13 +374,18 @@ import { Settings, Product } from '@shared/models/models';
       font-weight: 800; 
       cursor: pointer; 
       display: flex; 
+      flex-direction: column;
+      gap: 10px;
       align-items: center; 
+      justify-content: center;
       transition: 0.2s; 
       font-size: 0.85rem;
-      flex-shrink: 0;
-      white-space: nowrap;
+      text-align: center;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
     }
-    .s-nav-item i { font-size: 16px; }
+    .s-nav-item i { font-size: 1.2rem; margin: 0 !important; }
     .s-nav-item:hover { background: #f1f5f9; color: #0f172a; }
     .s-nav-item.active { background: #0f172a; color: white; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2); }
     
@@ -538,7 +541,7 @@ import { Settings, Product } from '@shared/models/models';
     @media (min-width: 1101px) {
       .settings-layout { display: grid; grid-template-columns: 240px 1fr; gap: 32px; }
       .settings-editor-container.with-preview .settings-layout { grid-template-columns: 240px 1fr 340px; }
-      .settings-sidebar { flex-direction: column; position: sticky; top: 20px; height: fit-content; padding: 15px; overflow-x: visible; }
+      .settings-sidebar { display: flex; flex-direction: column; position: sticky; top: 20px; height: fit-content; padding: 20px; overflow-x: visible; gap: 10px; }
       .s-nav-item { width: 100%; }
       
       .form-grid-3 { grid-template-columns: repeat(3, 1fr); }

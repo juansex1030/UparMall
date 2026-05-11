@@ -142,6 +142,36 @@ import { Product } from '@shared/models/models';
           </div>
         </div>
 
+        <!-- GESTIÓN DE STOCK (OPCIONAL) -->
+        <div class="slim-section s-rose">
+          <div class="s-header">
+            <span><i class="fas fa-warehouse"></i> Control de Inventario (Opcional)</span>
+            <div class="ios-toggle-compact" [class.active]="product.manageStock" (click)="product.manageStock = !product.manageStock">
+              <div class="toggle-handle"></div>
+            </div>
+          </div>
+          
+          <div class="s-grid" *ngIf="product.manageStock">
+            <div class="f-group">
+              <span class="f-label">Stock Actual</span>
+              <div class="input-with-icon">
+                <i class="fas fa-cubes"></i>
+                <input type="number" [(ngModel)]="product.stock" placeholder="0">
+              </div>
+            </div>
+            <div class="f-group">
+              <span class="f-label">Alerta de Stock Bajo</span>
+              <div class="input-with-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+                <input type="number" [(ngModel)]="product.lowStockThreshold" placeholder="5">
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!product.manageStock" class="empty-msg" style="border-style: solid; background: #fff5f7; border-color: #fecdd3; color: #9f1239;">
+            Gestión de inventario desactivada para este producto.
+          </div>
+        </div>
+
         <!-- FOOTER -->
         <div class="slim-footer">
           <button class="btn-footer-cancel" (click)="close.emit()">DESCARTAR</button>
@@ -174,6 +204,7 @@ import { Product } from '@shared/models/models';
     .s-blue { border-left: 6px solid #2563eb; } .s-purple { border-left: 6px solid #7c3aed; }
     .s-indigo { border-left: 6px solid #4f46e5; } .s-emerald { border-left: 6px solid #059669; }
     .s-orange { border-left: 6px solid #d97706; }
+    .s-rose { border-left: 6px solid #e11d48; }
 
     .s-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
     .f-group { display: flex; flex-direction: column; gap: 6px; }
@@ -246,6 +277,17 @@ import { Product } from '@shared/models/models';
     .btn-add-pill:hover { border-color: #0f172a; background: #f1f5f9; }
 
     .empty-msg { text-align: center; font-size: 0.8rem; color: #64748b; padding: 15px; font-weight: 800; border: 2px dashed #e2e8f0; border-radius: 12px; }
+
+    /* Icons inside inputs */
+    .input-with-icon { position: relative; display: flex; align-items: center; }
+    .input-with-icon i { position: absolute; left: 16px; color: #64748b; font-size: 0.9rem; }
+    .input-with-icon input { padding-left: 45px; }
+
+    /* Toggle switch compacto */
+    .ios-toggle-compact { width: 44px; height: 22px; background: #cbd5e1; border-radius: 100px; position: relative; cursor: pointer; transition: 0.3s; }
+    .ios-toggle-compact.active { background: #e11d48; }
+    .toggle-handle { width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .ios-toggle-compact.active .toggle-handle { left: 25px; }
 
     /* FOOTER */
     .slim-footer { display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px; padding-top: 25px; border-top: 3px solid #f1f5f9; }

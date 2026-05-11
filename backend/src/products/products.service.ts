@@ -18,6 +18,9 @@ export class ProductsService {
       isActive: createProductDto.isActive ?? true,
       category: createProductDto.category ?? 'General',
       specifications: createProductDto.specifications ?? [],
+      manageStock: createProductDto.manageStock ?? false,
+      stock: createProductDto.stock ?? 0,
+      lowStockThreshold: createProductDto.lowStockThreshold ?? 5,
       createdAt: now,
       updatedAt: now
     };
@@ -87,6 +90,9 @@ export class ProductsService {
     if (updateProductDto.isActive !== undefined)       payload.isActive = updateProductDto.isActive;
     if (updateProductDto.variants !== undefined)       payload.variants = updateProductDto.variants;
     if (updateProductDto.specifications !== undefined) payload.specifications = updateProductDto.specifications;
+    if (updateProductDto.manageStock !== undefined)    payload.manageStock = updateProductDto.manageStock;
+    if (updateProductDto.stock !== undefined)          payload.stock = updateProductDto.stock;
+    if (updateProductDto.lowStockThreshold !== undefined) payload.lowStockThreshold = updateProductDto.lowStockThreshold;
 
     const { data, error } = await this.supabase.adminClient
       .from('Product')

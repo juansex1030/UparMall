@@ -675,6 +675,36 @@ import { catchError, of, Subscription } from 'rxjs';
     .mobile-cat-list button.active { background: var(--primary-color); color: white; }
     
     .mobile-nav-links { display: flex; flex-direction: column; gap: 10px; }
+    .categories-nav { 
+      display: flex; 
+      gap: 12px; 
+      overflow-x: auto; 
+      padding: 10px 5px;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;  /* IE and Edge */
+      margin: 0 -5px;
+    }
+    .categories-nav::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+    .category-chip { 
+      padding: 10px 32px; 
+      border-radius: 10px; 
+      background: white; 
+      font-weight: 750; 
+      cursor: pointer; 
+      transition: 0.3s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      border: 1px solid #e2e8f0;
+      width: auto;
+      min-width: max-content;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      color: #334155;
+      overflow: visible;
+    }
     .mobile-nav-links a { 
       display: flex; align-items: center; gap: 12px; padding: 15px 20px; 
       background: #f8f9fa; border-radius: 14px; color: #1a1a1a; 
@@ -930,14 +960,16 @@ import { catchError, of, Subscription } from 'rxjs';
       .ribbon-container { gap: 12px; padding: 0 15px; }
       .ribbon-inner { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; gap: 10px; }
       .ribbon-item { 
-        padding: 10px 22px; font-size: 0.85rem; font-weight: 800;
-        scroll-snap-align: start; border-radius: 12px;
+        padding: 12px 32px; font-size: 0.9rem; font-weight: 800;
+        scroll-snap-align: start; border-radius: 10px;
+        white-space: nowrap; flex-shrink: 0; min-width: max-content;
+        overflow: visible;
       }
       .btn-ribbon-expand { padding: 10px 14px; font-size: 0.8rem; border-radius: 12px; }
       .btn-ribbon-expand span { display: none; }
 
       .ribbon-expanded-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding-top: 15px; }
-      .grid-cat-item { padding: 12px; font-size: 0.8rem; }
+      .grid-cat-item { padding: 12px; font-size: 0.85rem; min-width: max-content; white-space: nowrap; font-weight: 750; }
 
       .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding-top: 1.5rem; }
       .glass-card { border-radius: 20px; }

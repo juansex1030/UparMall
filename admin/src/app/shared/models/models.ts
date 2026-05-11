@@ -8,6 +8,10 @@ export interface Product {
   isActive: boolean;
   variants?: ProductVariant[];
   specifications?: ProductSpecification[];
+  // Gestión de Stock
+  manageStock?: boolean;
+  stock?: number;
+  lowStockThreshold?: number;
 }
 
 export interface ProductSpecification {

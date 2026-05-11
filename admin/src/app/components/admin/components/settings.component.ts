@@ -26,6 +26,9 @@ import { Settings, Product } from '@shared/models/models';
           <button class="s-nav-item" [class.active]="activeSection === 'horarios'" (click)="activeSection = 'horarios'">
             <i class="fas fa-clock" style="margin-right: 12px;"></i> Horarios
           </button>
+          <button class="s-nav-item" [class.active]="activeSection === 'security'" (click)="activeSection = 'security'">
+            <i class="fas fa-lock" style="margin-right: 12px;"></i> Seguridad
+          </button>
           <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
             <button class="btn-action btn-dark" style="width: 100%" (click)="save.emit()">
               <i class="fas fa-save" style="margin-right: 10px;"></i> Guardar Todo
@@ -36,12 +39,17 @@ import { Settings, Product } from '@shared/models/models';
         <div class="settings-main">
           <!-- General Section -->
           <div class="s-section" *ngIf="activeSection === 'general'">
-            <h3>Identidad de la Tienda</h3>
+            <div class="section-header">
+              <h3>Identidad de la Tienda</h3>
+              <p>Configura los detalles básicos que verán tus clientes.</p>
+            </div>
+            
             <div class="form-group">
               <label>Nombre del Negocio</label>
               <input type="text" [(ngModel)]="settings.businessName" (input)="updatePreview.emit()" placeholder="Mi Tienda">
             </div>
-            <div class="form-row">
+
+            <div class="form-grid-3">
               <div class="form-group">
                 <label>WhatsApp Comercial</label>
                 <input type="text" [(ngModel)]="settings.whatsappNumber" placeholder="573001234567">
@@ -58,29 +66,35 @@ import { Settings, Product } from '@shared/models/models';
                 <input type="number" [(ngModel)]="settings.deliveryFee" placeholder="Ej: 6000">
               </div>
             </div>
+
             <div class="form-group">
-              <label>Sobre Nosotros (Descripción de la tienda)</label>
-              <textarea [(ngModel)]="settings.description" rows="5" placeholder="Escribe aquí la historia o descripción de tu negocio..."></textarea>
+              <label>Sobre Nosotros (Descripción)</label>
+              <textarea [(ngModel)]="settings.description" rows="4" placeholder="Escribe aquí la historia o descripción de tu negocio..."></textarea>
             </div>
+
             <div class="form-group">
               <label>Dirección Física (Opcional)</label>
               <input type="text" [(ngModel)]="settings.address" placeholder="Ej: Calle 123 #45-67, Barrio Centro">
             </div>
+
             <div class="form-group">
-              <label style="display: flex; justify-content: space-between;">
+              <label class="label-with-hint">
                 Logo del Negocio
-                <span style="font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: none; letter-spacing: 0;">Recomendado: 500x500px</span>
+                <span>Recomendado: 500x500px</span>
               </label>
-              <div class="logo-upload">
-                <div class="logo-preview">
+              <div class="logo-upload-card">
+                <div class="logo-preview-container">
                   <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" 
                        (error)="$event.target.src = '/assets/logo-uparmall.png'"
                        alt="Logo">
                 </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
-                  <input type="text" [(ngModel)]="settings.logoUrl" placeholder="URL del logo">
-                  <label class="btn-action btn-light" style="width: fit-content; cursor: pointer;">
-                    <i class="fas fa-upload" style="margin-right: 8px;"></i> Subir Imagen
+                <div class="logo-controls">
+                  <div class="url-input-wrapper">
+                    <i class="fas fa-link"></i>
+                    <input type="text" [(ngModel)]="settings.logoUrl" placeholder="URL del logo">
+                  </div>
+                  <label class="btn-action btn-upload">
+                    <i class="fas fa-camera"></i> Subir Imagen
                     <input type="file" (change)="uploadLogo.emit($event)" hidden accept="image/*">
                   </label>
                 </div>
@@ -90,72 +104,96 @@ import { Settings, Product } from '@shared/models/models';
 
           <!-- Appearance Section -->
           <div class="s-section" *ngIf="activeSection === 'colors'">
-            <h3>Estilo y Colores</h3>
-            <div class="form-row">
-              <div class="form-group">
+            <div class="section-header">
+              <h3>Estilo y Colores</h3>
+              <p>Personaliza los colores y tipografías para que coincidan con tu marca.</p>
+            </div>
+            
+            <div class="form-grid-2">
+              <div class="form-group color-group">
                 <label>Color Principal</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                  <input type="color" [(ngModel)]="settings.primaryColor" (input)="updatePreview.emit()" style="width: 60px; height: 50px; padding: 5px;">
-                  <span style="font-weight: 700; font-family: monospace;">{{ settings.primaryColor }}</span>
+                <div class="color-picker-wrapper">
+                  <input type="color" [(ngModel)]="settings.primaryColor" (input)="updatePreview.emit()">
+                  <span class="color-code">{{ settings.primaryColor }}</span>
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group color-group">
                 <label>Fondo de Página</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                  <input type="color" [(ngModel)]="settings.backgroundColor" (input)="updatePreview.emit()" style="width: 60px; height: 50px; padding: 5px;">
-                  <span style="font-weight: 700; font-family: monospace;">{{ settings.backgroundColor }}</span>
+                <div class="color-picker-wrapper">
+                  <input type="color" [(ngModel)]="settings.backgroundColor" (input)="updatePreview.emit()">
+                  <span class="color-code">{{ settings.backgroundColor }}</span>
                 </div>
               </div>
             </div>
+
             <div class="form-group">
-                  <label>Tipografía del Sitio</label>
-                  <select [(ngModel)]="settings.fontFamily" (change)="updatePreview.emit()">
-                    <option *ngFor="let font of fontOptions" [value]="font.value">{{ font.name }}</option>
-                  </select>
+              <label>Tipografía del Sitio</label>
+              <div class="select-wrapper">
+                <select [(ngModel)]="settings.fontFamily" (change)="updatePreview.emit()">
+                  <option *ngFor="let font of fontOptions" [value]="font.value">{{ font.name }}</option>
+                </select>
+                <i class="fas fa-chevron-down"></i>
+              </div>
             </div>
+
             <div class="form-group">
               <label>Estilo de Barra de Navegación</label>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <button class="btn-action btn-light" [class.btn-dark]="settings.navbarStyle === 'glass'" (click)="settings.navbarStyle = 'glass'; updatePreview.emit()">Cristal</button>
-                <button class="btn-action btn-light" [class.btn-dark]="settings.navbarStyle === 'solid'" (click)="settings.navbarStyle = 'solid'; updatePreview.emit()">Sólido</button>
-                <button class="btn-action btn-light" [class.btn-dark]="settings.navbarStyle === 'minimal'" (click)="settings.navbarStyle = 'minimal'; updatePreview.emit()">Mínimo</button>
+              <div class="style-selector">
+                <button class="style-btn" [class.active]="settings.navbarStyle === 'glass'" (click)="settings.navbarStyle = 'glass'; updatePreview.emit()">
+                  <div class="style-icon glass"></div>
+                  <span>Cristal</span>
+                </button>
+                <button class="style-btn" [class.active]="settings.navbarStyle === 'solid'" (click)="settings.navbarStyle = 'solid'; updatePreview.emit()">
+                  <div class="style-icon solid"></div>
+                  <span>Sólido</span>
+                </button>
+                <button class="style-btn" [class.active]="settings.navbarStyle === 'minimal'" (click)="settings.navbarStyle = 'minimal'; updatePreview.emit()">
+                  <div class="style-icon minimal"></div>
+                  <span>Mínimo</span>
+                </button>
               </div>
             </div>
           </div>
 
+          <!-- Hero Section -->
           <div class="s-section" *ngIf="activeSection === 'hero'">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div class="section-header flex-header">
               <div>
-                <h3 style="margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                  Banners Publicitarios
-                  <span style="font-size: 0.8rem; color: #64748b; font-weight: 700; letter-spacing: 0; background: #f1f5f9; padding: 4px 12px; border-radius: 8px;">Recomendado: 1200x400px (3:1)</span>
-                </h3>
+                <h3>Banners Publicitarios</h3>
+                <p>Imágenes que aparecerán en la parte superior de tu tienda.</p>
               </div>
-              <button class="btn-action btn-dark" (click)="addSlide.emit()" style="padding: 12px 20px; gap: 10px; height: 48px;">
-                <i class="fas fa-plus"></i> Añadir Nuevo Banner
+              <button class="btn-action btn-dark" (click)="addSlide.emit()">
+                <i class="fas fa-plus"></i> Nuevo Banner
               </button>
             </div>
 
-            <div class="banner-card" *ngFor="let slide of settings.heroSlides; let i = index">
-              <div class="banner-preview-box">
-                <img [src]="slide.url || '/assets/logo-uparmall.png'" 
-                     (error)="$event.target.src = '/assets/logo-uparmall.png'"
-                     alt="Slide Preview">
-              </div>
-
-              <div class="banner-info-fields">
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label style="font-size: 0.7rem;">URL de la Imagen</label>
-                  <input type="text" [(ngModel)]="slide.url" (input)="updatePreview.emit()" placeholder="Pega el enlace de la imagen aquí">
+            <div class="banners-list">
+              <div class="banner-card" *ngFor="let slide of settings.heroSlides; let i = index">
+                <div class="banner-preview">
+                  <img [src]="slide.url || '/assets/logo-uparmall.png'" 
+                       (error)="$event.target.src = '/assets/logo-uparmall.png'"
+                       alt="Slide Preview">
+                  <div class="banner-overlay">
+                    <button class="btn-icon-delete" (click)="removeSlide.emit(i)">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
                 </div>
-                <div style="margin-top: 15px; display: flex; gap: 12px;">
-                  <label class="btn-action btn-light" style="flex: 1; justify-content: center; cursor: pointer; margin: 0;">
-                    <i class="fas fa-upload" style="margin-right: 8px;"></i> Cambiar Imagen
-                    <input type="file" (change)="uploadSlide.emit({event: $event, index: i})" hidden accept="image/*">
-                  </label>
-                  <button class="btn-action btn-danger" style="flex: 1; justify-content: center;" (click)="removeSlide.emit(i)">
-                    <i class="fas fa-trash-alt" style="margin-right: 8px;"></i> Eliminar
-                  </button>
+
+                <div class="banner-details">
+                  <div class="form-group">
+                    <label>Enlace de la Imagen</label>
+                    <div class="url-input-wrapper">
+                      <i class="fas fa-link"></i>
+                      <input type="text" [(ngModel)]="slide.url" (input)="updatePreview.emit()" placeholder="URL de la imagen...">
+                    </div>
+                  </div>
+                  <div class="banner-actions">
+                    <label class="btn-action btn-light-full">
+                      <i class="fas fa-camera"></i> Cambiar Imagen
+                      <input type="file" (change)="uploadSlide.emit({event: $event, index: i})" hidden accept="image/*">
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -163,99 +201,143 @@ import { Settings, Product } from '@shared/models/models';
 
           <!-- Social Section -->
           <div class="s-section" *ngIf="activeSection === 'social'">
-            <h3>Redes Sociales</h3>
-            <div *ngIf="settings.socialLinks">
-              <div class="form-group">
-                <label>Instagram (@usuario)</label>
-                <input type="text" [(ngModel)]="settings.socialLinks.instagram" placeholder="mi.tienda">
+            <div class="section-header">
+              <h3>Redes Sociales</h3>
+              <p>Conecta tu tienda con tus perfiles sociales.</p>
+            </div>
+            
+            <div class="social-links-grid" *ngIf="settings.socialLinks">
+              <div class="form-group social-group">
+                <label><i class="fab fa-instagram"></i> Instagram</label>
+                <div class="social-input">
+                  <span>@</span>
+                  <input type="text" [(ngModel)]="settings.socialLinks.instagram" placeholder="mi.tienda">
+                </div>
               </div>
-              <div class="form-group">
-                <label>Facebook (link)</label>
-                <input type="text" [(ngModel)]="settings.socialLinks.facebook" placeholder="facebook.com/mi.tienda">
+              <div class="form-group social-group">
+                <label><i class="fab fa-facebook"></i> Facebook</label>
+                <div class="social-input">
+                  <span>/</span>
+                  <input type="text" [(ngModel)]="settings.socialLinks.facebook" placeholder="mi.tienda">
+                </div>
               </div>
-              <div class="form-group">
-                <label>TikTok (@usuario)</label>
-                <input type="text" [(ngModel)]="settings.socialLinks.tiktok" placeholder="mi.tienda">
+              <div class="form-group social-group">
+                <label><i class="fab fa-tiktok"></i> TikTok</label>
+                <div class="social-input">
+                  <span>@</span>
+                  <input type="text" [(ngModel)]="settings.socialLinks.tiktok" placeholder="mi.tienda">
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Business Hours Section -->
           <div class="s-section" *ngIf="activeSection === 'horarios'">
-            <div style="margin-bottom: 30px;">
-              <h3 style="margin: 0;">Horario Laboral</h3>
+            <div class="section-header">
+              <h3>Horario Laboral</h3>
+              <p>Define cuándo está abierta tu tienda para recibir pedidos.</p>
             </div>
 
-            <div class="hours-grid">
-              <div *ngFor="let day of settings.businessHours; let i = index" class="day-row" [class.day-disabled]="!day.enabled">
-                <div class="day-info">
-                  <div class="switch-container" (click)="day.enabled = !day.enabled">
-                    <div class="ios-switch" [class.active]="day.enabled">
-                      <div class="switch-handle"></div>
-                    </div>
-                    <span class="status-label" [style.color]="day.enabled ? '#10b981' : '#94a3b8'">
-                      {{ day.enabled ? 'ABIERTO' : 'CERRADO' }}
-                    </span>
+            <div class="hours-list">
+              <div *ngFor="let day of settings.businessHours; let i = index" class="hour-row" [class.is-closed]="!day.enabled">
+                <div class="hour-day-info">
+                  <div class="ios-toggle" [class.active]="day.enabled" (click)="day.enabled = !day.enabled">
+                    <div class="toggle-handle"></div>
                   </div>
                   <span class="day-name">{{ day.day }}</span>
+                  <span class="status-badge" [class.active]="day.enabled">
+                    {{ day.enabled ? 'ABIERTO' : 'CERRADO' }}
+                  </span>
                 </div>
                 
-                <div class="time-inputs" *ngIf="day.enabled">
-                  <div class="time-group">
-                    <label>Abre</label>
-                    <input type="time" [(ngModel)]="day.open" class="time-field">
+                <div class="hour-times" *ngIf="day.enabled">
+                  <div class="time-box">
+                    <label>Desde</label>
+                    <div class="time-input-wrapper">
+                      <input type="time" [(ngModel)]="day.open">
+                      <i class="far fa-clock"></i>
+                    </div>
                   </div>
-                  <div class="time-separator">a</div>
-                  <div class="time-group">
-                    <label>Cierra</label>
-                    <input type="time" [(ngModel)]="day.close" class="time-field">
+                  <div class="time-sep">a</div>
+                  <div class="time-box">
+                    <label>Hasta</label>
+                    <div class="time-input-wrapper">
+                      <input type="time" [(ngModel)]="day.close">
+                      <i class="far fa-clock"></i>
+                    </div>
                   </div>
                 </div>
                 
-                <div class="day-status-text" *ngIf="!day.enabled">
-                  Cerrado
+                <div class="hour-closed-msg" *ngIf="!day.enabled">
+                  No laborable
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Security Section -->
+          <div class="s-section" *ngIf="activeSection === 'security'">
+            <div class="section-header">
+              <h3>Seguridad de la Cuenta</h3>
+              <p>Cambia tu contraseña de acceso al panel administrativo.</p>
+            </div>
+
+            <div class="form-group" style="max-width: 400px;">
+              <label>Nueva Contraseña (mínimo 6 caracteres)</label>
+              <input type="password" [(ngModel)]="newPassword" placeholder="••••••••">
+            </div>
+            <div class="form-group" style="max-width: 400px;">
+              <label>Confirmar Contraseña</label>
+              <input type="password" [(ngModel)]="confirmPassword" placeholder="••••••••">
+            </div>
+
+            <div *ngIf="passwordMsg" [class.msg-success]="!isPasswordError" [class.msg-error]="isPasswordError" class="feedback-msg" style="margin-bottom: 20px;">
+              <i class="fas" [class.fa-check-circle]="!isPasswordError" [class.fa-exclamation-circle]="isPasswordError" style="margin-right: 8px;"></i>
+              {{ passwordMsg }}
+            </div>
+
+            <button class="btn-action btn-dark" [disabled]="!newPassword || newPassword.length < 6 || isUpdatingPassword" (click)="onChangePassword()">
+              <i class="fas" [class.fa-key]="!isUpdatingPassword" [class.fa-spinner]="isUpdatingPassword" [class.fa-spin]="isUpdatingPassword" style="margin-right: 10px;"></i>
+              {{ isUpdatingPassword ? 'Actualizando...' : 'Actualizar Contraseña' }}
+            </button>
           </div>
         </div>
 
         <!-- Live Preview Panel -->
         <div class="live-preview-panel" *ngIf="isPreviewActive">
           <div class="preview-frame">
-            <div class="preview-header">
-              <div style="display: flex; gap: 6px;">
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56;"></span>
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e;"></span>
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f;"></span>
+            <div class="preview-browser-header">
+              <div class="dots">
+                <span></span><span></span><span></span>
               </div>
-              <span style="color: #64748b; font-size: 0.75rem; font-weight: 800;">Vista Previa</span>
+              <div class="url-bar">{{ settings.slug || 'tienda' }}.uparmall.com</div>
             </div>
-            <div class="preview-content-scroller" [style.font-family]="settings.fontFamily" [style.background]="'#f0f2f5'">
-              <div [style.background]="settings.navbarStyle === 'solid' ? settings.primaryColor : 'rgba(255,255,255,0.9)'" 
-                   style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px);">
-                <span style="font-weight: 900; font-size: 0.8rem;" [style.color]="settings.navbarStyle === 'solid' ? '#fff' : '#000'">{{ settings.businessName }}</span>
-                <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" 
-                     (error)="$event.target.src = '/assets/logo-uparmall.png'"
-                     style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover;">
+            <div class="preview-viewport" [style.font-family]="settings.fontFamily" [style.background]="settings.backgroundColor || '#f0f2f5'">
+              <div class="preview-navbar" [style.background]="settings.navbarStyle === 'solid' ? settings.primaryColor : 'rgba(255,255,255,0.85)'" 
+                   [style.backdrop-filter]="settings.navbarStyle === 'glass' ? 'blur(10px)' : 'none'">
+                <div class="nav-brand">
+                  <img [src]="settings.logoUrl || '/assets/logo-uparmall.png'" (error)="$event.target.src = '/assets/logo-uparmall.png'">
+                  <span [style.color]="settings.navbarStyle === 'solid' ? '#fff' : '#0f172a'">{{ settings.businessName || 'Mi Tienda' }}</span>
+                </div>
+                <div class="nav-icons" [style.color]="settings.navbarStyle === 'solid' ? '#fff' : '#64748b'">
+                  <i class="fas fa-search"></i>
+                  <i class="fas fa-shopping-cart"></i>
+                </div>
               </div>
-              <div style="width: 100%; height: 180px; position: relative; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
-                <img [src]="settings.heroSlides?.[0]?.url || 'assets/logo-uparmall.png'" style="width: 100%; height: 100%; object-fit: contain;">
+              
+              <div class="preview-hero">
+                <img [src]="settings.heroSlides?.[0]?.url || 'assets/logo-uparmall.png'" (error)="$event.target.src = 'assets/logo-uparmall.png'">
               </div>
-              <div style="padding: 20px;" [style.background]="settings.backgroundColor || '#f0f2f5'">
-                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div *ngFor="let p of products.slice(0, 4)" style="background: white; border-radius: 18px; border: 1px solid rgba(0,0,0,0.03); overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-                    <div style="height: 100px; background: #f8fafc; display: flex; align-items: center; justify-content: center; padding: 10px;">
-                      <img [src]="p.imageUrl || 'assets/logo-uparmall.png'" style="width: 100%; height: 100%; object-fit: contain;">
-                    </div>
-                    <div style="padding: 12px; flex: 1;">
-                      <div style="font-size: 0.7rem; font-weight: 850; margin-bottom: 6px; color: #0f172a; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;">{{ p.name }}</div>
-                      <span style="font-weight: 950; font-size: 0.85rem; color: #0f172a;">$ {{ p.price | number }}</span>
+
+              <div class="preview-body">
+                 <div class="preview-grid">
+                  <div *ngFor="let p of products.slice(0, 4)" class="preview-product-card">
+                    <div class="p-img"><img [src]="p.imageUrl || 'assets/logo-uparmall.png'"></div>
+                    <div class="p-info">
+                      <div class="p-name">{{ p.name }}</div>
+                      <div class="p-price" [style.color]="settings.primaryColor">$ {{ p.price | number }}</div>
                     </div>
                   </div>
-                </div>
-                <div *ngIf="products.length === 0" style="text-align: center; padding: 40px 10px;">
-                   <p style="font-size: 0.75rem; color: #64748b; font-weight: 700;">No hay productos para mostrar en la vista previa</p>
                 </div>
               </div>
             </div>
@@ -266,95 +348,218 @@ import { Settings, Product } from '@shared/models/models';
   `,
   styles: [`
     .settings-editor-container { width: 100%; transition: all 0.3s ease; }
-    .settings-layout { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+    .settings-layout { display: flex; flex-direction: column; gap: 24px; width: 100%; }
     
+    /* Sidebar styling */
     .settings-sidebar { 
       background: white; 
-      padding: 12px 15px; 
-      border-radius: 18px; 
+      padding: 12px; 
+      border-radius: 20px; 
       border: 1px solid #e2e8f0; 
       display: flex; 
       overflow-x: auto; 
-      gap: 12px; 
+      gap: 10px; 
       scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
       position: sticky;
       top: 0;
       z-index: 1000;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      width: 100%;
-      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
     .settings-sidebar::-webkit-scrollbar { display: none; }
     
     .s-nav-item { 
-      padding: 10px 20px; 
-      border-radius: 12px; 
+      padding: 12px 20px; 
+      border-radius: 14px; 
       border: none; 
-      background: #f1f5f9; 
-      color: #475569; 
+      background: #f8fafc; 
+      color: #64748b; 
       font-weight: 800; 
       cursor: pointer; 
       display: flex; 
       align-items: center; 
-      gap: 8px; 
       transition: 0.2s; 
       font-size: 0.85rem;
       flex-shrink: 0;
       white-space: nowrap;
     }
-    .s-nav-item i { font-size: 14px; opacity: 0.7; }
-    .s-nav-item:hover { background: #e2e8f0; color: #0f172a; }
-    .s-nav-item.active { background: #0f172a; color: white; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2); }
+    .s-nav-item i { font-size: 16px; }
+    .s-nav-item:hover { background: #f1f5f9; color: #0f172a; }
+    .s-nav-item.active { background: #0f172a; color: white; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2); }
     
-    .settings-main { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    /* Main sections */
+    .settings-main { width: 100%; display: flex; flex-direction: column; gap: 24px; }
+    .s-section { background: white; padding: 32px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+    
+    .section-header { margin-bottom: 28px; }
+    .section-header h3 { font-size: 1.4rem; font-weight: 950; color: #0f172a; margin: 0 0 6px 0; }
+    .section-header p { font-size: 0.95rem; color: #475569; margin: 0; font-weight: 700; }
+    .flex-header { display: flex; justify-content: space-between; align-items: flex-end; }
 
-    .s-section { background: white; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); width: 100%; }
-    .s-section h3 { font-size: 1.3rem; font-weight: 950; margin-bottom: 20px; color: #0f172a; }
+    /* Form controls */
+    .form-group { margin-bottom: 22px; width: 100%; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 950; color: #475569; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .label-with-hint { display: flex !important; justify-content: space-between; align-items: center; }
+    .label-with-hint span { font-size: 0.75rem; color: #64748b; text-transform: none; font-weight: 700; }
 
-    .form-group { margin-bottom: 18px; width: 100%; }
-    .form-group label { display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; }
-    .form-group input, .form-group textarea, .form-group select { 
-      width: 100% !important; 
-      padding: 12px; 
-      border-radius: 12px; 
-      border: 1px solid #e2e8f0; 
-      background: #f8fafc; 
-      font-size: 0.95rem; 
-      font-weight: 700; 
-      color: #0f172a; 
-      box-sizing: border-box;
+    input[type="text"], input[type="number"], textarea, select { 
+      width: 100%; padding: 16px 20px; border-radius: 16px; border: 2px solid #e2e8f0; 
+      background: #f8fafc; font-size: 1rem; font-weight: 800; color: #0f172a; transition: 0.2s;
     }
-    .form-row { display: flex; flex-direction: column; gap: 15px; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #0f172a; background: white; box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05); }
 
-    .logo-upload { display: flex; flex-direction: column; gap: 15px; padding: 15px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; }
-    .logo-preview { width: 64px; height: 64px; border-radius: 10px; overflow: hidden; background: white; border: 1px solid #eee; align-self: center; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr; gap: 20px; }
 
-    .banner-card { background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; }
-    .banner-preview-box { height: 120px; border-radius: 10px; overflow: hidden; background: #e2e8f0; width: 100%; }
-    .banner-preview-box img { width: 100%; height: 100%; object-fit: contain; }
+    /* Slug box */
+    .slug-box { position: relative; display: flex; align-items: center; }
+    .slug-box span { position: absolute; left: 18px; font-weight: 950; color: #475569; font-size: 1.1rem; }
+    .slug-box input { padding-left: 35px; }
 
-    .hours-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-    .day-row { display: flex; flex-direction: column; padding: 15px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; gap: 12px; }
-    .day-info { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-    .time-inputs { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-    .time-field { width: 45% !important; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 700; }
+    /* Logo Upload Refined */
+    .logo-upload-card { display: flex; flex-direction: column; gap: 20px; padding: 24px; background: #f8fafc; border-radius: 20px; border: 2px solid #e2e8f0; }
+    .logo-preview-container { width: 110px; height: 110px; background: white; border-radius: 18px; border: 2px solid #e2e8f0; overflow: hidden; align-self: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .logo-preview-container img { width: 100%; height: 100%; object-fit: contain; }
+    .logo-controls { flex: 1; display: flex; flex-direction: column; gap: 12px; width: 100%; }
+    
+    .url-input-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
+    .url-input-wrapper i { position: absolute; left: 16px; color: #475569; font-size: 1rem; }
+    .url-input-wrapper input { padding-left: 45px; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
 
-    .live-preview-panel { width: 100%; margin-top: 40px; display: flex; justify-content: center; }
-    .preview-frame { background: #0f172a; border-radius: 30px; border: 6px solid #1e293b; height: 600px; width: 300px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
+    /* Color Pickers */
+    .color-picker-wrapper { display: flex; align-items: center; gap: 15px; background: #f8fafc; padding: 12px; border-radius: 16px; border: 2px solid #e2e8f0; }
+    .color-picker-wrapper input[type="color"] { width: 50px; height: 50px; border: none; border-radius: 10px; cursor: pointer; padding: 0; background: none; }
+    .color-code { font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #0f172a; font-size: 1rem; }
+
+    /* Style Selectors */
+    .style-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .style-btn { 
+      padding: 18px; border-radius: 16px; border: 2px solid #e2e8f0; background: #f8fafc; 
+      display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s;
+    }
+    .style-btn span { font-size: 0.9rem; font-weight: 900; color: #475569; }
+    .style-btn.active { border-color: #0f172a; background: #0f172a; }
+    .style-btn.active span { color: white; }
+    .style-icon { width: 44px; height: 14px; border-radius: 4px; }
+    .style-icon.glass { background: rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.1); }
+    .style-icon.solid { background: #475569; }
+    .style-icon.minimal { border-bottom: 3px solid #475569; border-radius: 0; }
+    .style-btn.active .style-icon.solid { background: white; }
+    .style-btn.active .style-icon.minimal { border-color: white; }
+
+    /* Banners Section */
+    .banners-list { display: flex; flex-direction: column; gap: 24px; }
+    .banner-card { background: white; border-radius: 20px; border: 2px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; }
+    .banner-preview { height: 160px; background: #f1f5f9; position: relative; }
+    .banner-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .banner-overlay { position: absolute; top: 12px; right: 12px; }
+    .btn-icon-delete { width: 36px; height: 36px; border-radius: 50%; background: #ef4444; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: 0.2s; }
+    .btn-icon-delete:hover { transform: scale(1.15); background: #dc2626; }
+    .banner-details { padding: 24px; flex: 1; }
+    .banner-actions { margin-top: 20px; }
+
+    /* Business Hours Section - Fixed Alignment */
+    .hours-list { display: flex; flex-direction: column; gap: 15px; }
+    .hour-row { 
+      display: flex; flex-direction: column; padding: 24px; background: white; 
+      border-radius: 24px; border: 2px solid #e2e8f0; gap: 20px; transition: 0.2s; 
+    }
+    .hour-row.is-closed { opacity: 0.7; background: #f8fafc; border-style: dashed; }
+    .hour-day-info { display: flex; align-items: center; gap: 18px; width: 100%; }
+    
+    .day-name { font-size: 1.1rem; font-weight: 950; color: #0f172a; flex: 1; }
+    .status-badge { padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 950; background: #e2e8f0; color: #475569; }
+    .status-badge.active { background: #dcfce7; color: #059669; }
+
+    .hour-times { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 18px; border-radius: 18px; border: 2px solid #e2e8f0; }
+    .time-box { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .time-box label { font-size: 0.7rem; font-weight: 950; color: #475569; text-transform: uppercase; margin: 0; }
+    .time-input-wrapper { position: relative; display: flex; align-items: center; }
+    .time-input-wrapper input { padding: 10px 14px; padding-right: 40px; border-radius: 12px; border: 2px solid #e2e8f0; background: white; font-size: 1rem; font-weight: 900; width: 100%; color: #0f172a; }
+    .time-input-wrapper i { position: absolute; right: 14px; color: #475569; font-size: 1.1rem; pointer-events: none; }
+    .time-sep { font-weight: 950; color: #475569; padding-top: 15px; font-size: 1.1rem; }
+    .hour-closed-msg { font-weight: 900; color: #64748b; font-size: 1rem; }
+
+    /* Toggle switch */
+    .ios-toggle { width: 50px; height: 28px; background: #cbd5e1; border-radius: 100px; position: relative; cursor: pointer; transition: 0.3s; }
+    .ios-toggle.active { background: #10b981; }
+    .toggle-handle { width: 22px; height: 22px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    .ios-toggle.active .toggle-handle { left: 25px; }
+
+    /* Social Section */
+    .social-links-grid { display: flex; flex-direction: column; gap: 20px; }
+    .social-group label { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+    .social-group label i { font-size: 20px; color: #0f172a; }
+    .social-input { position: relative; display: flex; align-items: center; }
+    .social-input span { position: absolute; left: 16px; font-weight: 950; color: #475569; font-size: 1.1rem; }
+    .social-input input { padding-left: 40px; }
+
+    /* Buttons */
+    .btn-action { display: flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 16px; font-weight: 850; border: none; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+    .btn-dark { background: #0f172a; color: white; }
+    .btn-dark:hover { background: #1e293b; transform: translateY(-2px); }
+    .btn-light { background: #f1f5f9; color: #475569; }
+    .btn-light:hover { background: #e2e8f0; }
+    .btn-upload { background: #0f172a; color: white; width: fit-content; }
+    .btn-light-full { width: 100%; background: #f8fafc; border: 2px solid #f1f5f9; color: #0f172a; justify-content: center; }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+
+    /* Live Preview Styling */
+    .live-preview-panel { width: 100%; display: flex; justify-content: center; margin-top: 40px; }
+    .preview-frame { width: 320px; height: 640px; background: #0f172a; border-radius: 40px; padding: 12px; box-shadow: 0 40px 100px rgba(0,0,0,0.15); border: 1px solid #334155; }
+    .preview-browser-header { background: #1e293b; border-radius: 30px 30px 0 0; padding: 15px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .preview-browser-header .dots { display: flex; gap: 6px; align-self: flex-start; }
+    .preview-browser-header .dots span { width: 8px; height: 8px; border-radius: 50%; }
+    .preview-browser-header .dots span:nth-child(1) { background: #ff5f56; }
+    .preview-browser-header .dots span:nth-child(2) { background: #ffbd2e; }
+    .preview-browser-header .dots span:nth-child(3) { background: #27c93f; }
+    .preview-browser-header .url-bar { background: #0f172a; color: #64748b; font-size: 0.65rem; padding: 6px 15px; border-radius: 100px; width: 100%; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+    .preview-viewport { background: white; height: calc(100% - 70px); border-radius: 0 0 28px 28px; overflow-y: auto; overflow-x: hidden; position: relative; }
+    .preview-viewport::-webkit-scrollbar { width: 4px; }
+    .preview-navbar { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    .nav-brand { display: flex; align-items: center; gap: 8px; }
+    .nav-brand img { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; }
+    .nav-brand span { font-size: 0.75rem; font-weight: 900; }
+    .nav-icons { display: flex; gap: 10px; font-size: 0.8rem; }
+
+    .preview-hero { width: 100%; height: 140px; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+    .preview-hero img { width: 100%; height: 100%; object-fit: cover; }
+
+    .preview-body { padding: 15px; }
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .preview-product-card { background: white; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+    .p-img { height: 80px; background: #f8fafc; display: flex; align-items: center; justify-content: center; padding: 8px; }
+    .p-img img { width: 100%; height: 100%; object-fit: contain; }
+    .p-info { padding: 10px; }
+    .p-name { font-size: 0.65rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; line-height: 1.2; height: 2.4em; overflow: hidden; }
+    .p-price { font-size: 0.75rem; font-weight: 900; }
 
     /* Desktop overrides */
     @media (min-width: 1101px) {
-      .settings-layout { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
-      .settings-editor-container.with-preview .settings-layout { grid-template-columns: 250px 1fr 320px; }
-      .settings-sidebar { flex-direction: column; position: sticky; top: 20px; overflow-x: visible; height: fit-content; padding: 20px; }
-      .s-nav-item { width: 100%; margin-bottom: 5px; }
-      .form-row { flex-direction: row; }
-      .banner-card { flex-direction: row; grid-template-columns: 180px 1fr; }
-      .day-row { flex-direction: row; }
-      .live-preview-panel { width: 320px; margin-top: 0; }
+      .settings-layout { display: grid; grid-template-columns: 240px 1fr; gap: 32px; }
+      .settings-editor-container.with-preview .settings-layout { grid-template-columns: 240px 1fr 340px; }
+      .settings-sidebar { flex-direction: column; position: sticky; top: 20px; height: fit-content; padding: 15px; overflow-x: visible; }
+      .s-nav-item { width: 100%; }
+      
+      .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .form-grid-2 { grid-template-columns: 1fr 1fr; }
+      
+      .logo-upload-card { flex-direction: row; align-items: center; }
+      .logo-preview-container { margin: 0; flex-shrink: 0; }
+      
+      .banner-card { flex-direction: row; }
+      .banner-preview { width: 220px; height: 160px; flex-shrink: 0; }
+      
+      .hour-row { flex-direction: row; align-items: center; }
+      .hour-day-info { width: 280px; flex-shrink: 0; }
+      .hour-times { flex: 1; padding: 10px 20px; }
+      
+      .social-links-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+      .live-preview-panel { width: 340px; margin-top: 0; position: sticky; top: 20px; height: fit-content; }
     }
   `]
+
 })
 export class SettingsComponent {
   @Input() settings: Settings | null = null;
@@ -366,8 +571,39 @@ export class SettingsComponent {
   @Output() addSlide = new EventEmitter<void>();
   @Output() removeSlide = new EventEmitter<number>();
   @Output() uploadSlide = new EventEmitter<{event: any, index: number}>();
+  @Output() changePassword = new EventEmitter<string>();
 
-  activeSection: 'general' | 'colors' | 'hero' | 'social' | 'horarios' = 'general';
+  activeSection: 'general' | 'colors' | 'hero' | 'social' | 'horarios' | 'security' = 'general';
+
+  newPassword = '';
+  confirmPassword = '';
+  isUpdatingPassword = false;
+  passwordMsg = '';
+  isPasswordError = false;
+
+  onChangePassword() {
+    if (this.newPassword !== this.confirmPassword) {
+      this.isPasswordError = true;
+      this.passwordMsg = 'Las contraseñas no coinciden';
+      return;
+    }
+
+    this.isUpdatingPassword = true;
+    this.passwordMsg = '';
+    this.isPasswordError = false;
+
+    this.changePassword.emit(this.newPassword);
+  }
+
+  public setPasswordFeedback(msg: string, isError: boolean) {
+    this.isUpdatingPassword = false;
+    this.passwordMsg = msg;
+    this.isPasswordError = isError;
+    if (!isError) {
+      this.newPassword = '';
+      this.confirmPassword = '';
+    }
+  }
 
   fontOptions = [
     { name: 'Inter (Moderna)', value: "'Inter', sans-serif" },

@@ -58,6 +58,7 @@ export class ProductsService {
       .from('Product')
       .select('*')
       .eq('storeId', store.id)
+      .eq('isActive', true) // Solo productos activos en la tienda pública
       .order('createdAt', { ascending: false });
 
     if (error) throw error;
@@ -100,13 +101,33 @@ export class ProductsService {
   }
 
   async remove(id: number, storeId: string) {
+    // Intentar borrar físicamente
     const { error } = await this.supabase.adminClient
       .from('Product')
       .delete()
       .eq('id', id)
-      .eq('storeId', storeId); // Ensure they own it
+      .eq('storeId', storeId);
 
-    if (error) throw error;
-    return { deleted: true };
+    if (error) {
+      // Si el error es por restricción de llave foránea (23503), 
+      // significa que el producto está en órdenes existentes.
+      // En ese caso, hacemos un "borrado lógico" desactivándolo.
+      if (error.code === '23503') {
+        const { error: updateError } = await this.supabase.adminClient
+          .from('Product')
+          .update({ isActive: false })
+          .eq('id', id)
+          .eq('storeId', storeId);
+
+        if (updateError) throw updateError;
+        return { 
+          message: 'El producto no se puede eliminar físicamente porque tiene historial de ventas. Se ha desactivado automáticamente.',
+          softDeleted: true 
+        };
+      }
+      throw error;
+    }
+
+    return { message: 'Producto eliminado correctamente', deleted: true };
   }
 }

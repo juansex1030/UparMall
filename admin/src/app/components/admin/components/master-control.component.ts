@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucidePackage, LucideShoppingBag, LucideClock, LucideEye } from '@lucide/angular';
+import { FormsModule } from '@angular/forms';
+import { DataService } from '../../../shared/services/data.service';
 
 @Component({
   selector: 'app-master-control',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="tab-content">
       <!-- Master Stats -->
@@ -30,6 +31,38 @@ import { LucidePackage, LucideShoppingBag, LucideClock, LucideEye } from '@lucid
             <div style="width: 48px; height: 48px; border-radius: 14px; background: #f0fdf4; color: #22c55e; display: flex; align-items: center; justify-content: center;">
               <i class="fas fa-shopping-cart" style="font-size: 24px;"></i>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions: Create User -->
+      <div class="s-section" style="margin-bottom: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+           <h3 style="margin: 0; font-size: 1.5rem;">Alta de Nueva Tienda</h3>
+           <span style="background: #0f172a; color: white; padding: 6px 12px; border-radius: 10px; font-size: 0.75rem; font-weight: 900;">Acceso Restringido</span>
+        </div>
+        
+        <div class="create-store-form">
+          <div class="form-grid">
+            <div class="f-group">
+              <label>Correo del Dueño</label>
+              <input type="email" [(ngModel)]="newUserEmail" placeholder="ejemplo@correo.com" class="m-input">
+            </div>
+            <div class="f-group">
+              <label>Contraseña Temporal (Opcional)</label>
+              <input type="password" [(ngModel)]="newUserPassword" placeholder="Dejar vacío para 'UparMall2026*'" class="m-input">
+            </div>
+            <div class="f-group" style="display: flex; align-items: flex-end;">
+              <button class="btn-create" [disabled]="isCreating || !newUserEmail" (click)="onCreateStore()">
+                <i class="fas" [class.fa-plus]="!isCreating" [class.fa-spinner]="isCreating" [class.fa-spin]="isCreating" style="margin-right: 8px;"></i>
+                {{ isCreating ? 'Creando...' : 'Dar de Alta' }}
+              </button>
+            </div>
+          </div>
+          
+          <div *ngIf="message" [class.msg-success]="!isError" [class.msg-error]="isError" class="feedback-msg">
+            <i class="fas" [class.fa-check-circle]="!isError" [class.fa-exclamation-circle]="isError" style="margin-right: 8px;"></i>
+            {{ message }}
           </div>
         </div>
       </div>
@@ -117,7 +150,21 @@ import { LucidePackage, LucideShoppingBag, LucideClock, LucideEye } from '@lucid
     .stat-value { font-size: 2.5rem; font-weight: 950; color: #0f172a; margin-top: 8px; display: block; letter-spacing: -1px; }
 
     .s-section { background: white; padding: 40px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
-    .s-section h3 { font-size: 1.75rem; font-weight: 950; letter-spacing: -1px; margin-bottom: 32px; color: #0f172a; }
+    .s-section h3 { font-size: 1.75rem; font-weight: 950; letter-spacing: -1px; color: #0f172a; }
+
+    .create-store-form { background: #f8fafc; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0; }
+    .form-grid { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 20px; }
+    .f-group label { display: block; font-size: 0.75rem; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 10px; }
+    .m-input { width: 100%; padding: 14px 20px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+    .m-input:focus { outline: none; border-color: #0f172a; background: white; }
+    
+    .btn-create { width: 100%; background: #0f172a; color: white; padding: 14px; border: none; border-radius: 12px; font-weight: 850; cursor: pointer; transition: 0.2s; }
+    .btn-create:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    .btn-create:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .feedback-msg { margin-top: 20px; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 0.9rem; }
+    .msg-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
     .table-wrapper { background: white; border-radius: 16px; overflow: hidden; }
     .master-table { width: 100%; border-collapse: collapse; }
@@ -143,6 +190,37 @@ export class MasterControlComponent {
   @Output() viewStore = new EventEmitter<string>();
   @Output() refresh = new EventEmitter<void>();
 
+  newUserEmail = '';
+  newUserPassword = '';
+  isCreating = false;
+  message = '';
+  isError = false;
+
+  constructor(private dataService: DataService) {}
+
   get safeStores() { return this.stores || []; }
   get safeOrders() { return this.orders || []; }
+
+  onCreateStore() {
+    if (!this.newUserEmail) return;
+    
+    this.isCreating = true;
+    this.message = '';
+    this.isError = false;
+
+    this.dataService.createMasterStore(this.newUserEmail, this.newUserPassword).subscribe({
+      next: (res) => {
+        this.isCreating = false;
+        this.message = '¡Éxito! El usuario ha sido dado de alta correctamente.';
+        this.newUserEmail = '';
+        this.newUserPassword = '';
+        this.refresh.emit();
+      },
+      error: (err) => {
+        this.isCreating = false;
+        this.isError = true;
+        this.message = err.error?.message || 'Error al crear el usuario. Verifica si ya existe.';
+      }
+    });
+  }
 }

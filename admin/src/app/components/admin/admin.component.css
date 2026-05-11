@@ -143,7 +143,9 @@
 .btn-light {
   background: white;
   border-color: var(--border);
-  color: #64748b;
+  color: #475569; 
+  font-weight: 800; 
+  color: #475569;
 }
 
 .btn-dark:hover {
@@ -162,23 +164,24 @@
 .tabs {
   display: flex;
   gap: 6px;
-  background: #f1f5f9;
+  background: #e2e8f0;
   padding: 6px;
   border-radius: 18px;
 }
 
 .tab-btn {
-  padding: 10px 20px !important;
+  padding: 12px 24px !important;
   border-radius: 14px;
   border: none;
   background: transparent;
-  font-weight: 700;
-  color: #64748b;
+  font-weight: 850;
+  color: #475569;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 1rem;
 }
 
 .tab-btn.active {
@@ -188,16 +191,17 @@
 }
 
 .preview-toggle {
-  background: #f8fafc;
-  border: 1px solid var(--border);
-  padding: 10px 20px !important;
+  background: #f1f5f9;
+  border: 2px solid var(--border);
+  padding: 12px 24px !important;
   border-radius: 14px;
-  font-weight: 700;
-  color: #64748b;
+  font-weight: 850;
+  color: #475569;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 1rem;
 }
 
 .preview-toggle.active {

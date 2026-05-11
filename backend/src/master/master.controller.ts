@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User } from '../auth/user.decorator';
@@ -60,5 +60,34 @@ export class MasterController {
     }
     
     return data || [];
+  }
+
+  @Post('create-store')
+  async createStore(@User() user: any, @Body() body: { email: string; password?: string }) {
+    this.checkSuperAdmin(user);
+
+    if (!body.email) {
+      throw new BadRequestException('El correo electrónico es obligatorio');
+    }
+
+    const password = body.password || 'UparMall2026*';
+
+    // 1. Crear el usuario en Auth usando el admin client
+    const { data: authData, error: authError } = await this.supabase.adminClient.auth.admin.createUser({
+      email: body.email,
+      password: password,
+      email_confirm: true
+    });
+
+    if (authError) {
+      console.error('Error creating user:', authError);
+      throw new BadRequestException(authError.message);
+    }
+
+    return { 
+      message: 'Usuario creado correctamente. La tienda se inicializará al primer acceso.', 
+      userId: authData.user.id,
+      email: authData.user.email
+    };
   }
 }

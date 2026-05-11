@@ -227,8 +227,14 @@ export class AdminComponent implements OnInit, OnDestroy {
   deleteProduct(id: number) {
     if (confirm('¿Deseas eliminar este producto?')) {
       this.dataService.deleteProduct(id).subscribe({
-        next: () => { this.showToast('Eliminado'); this.loadProducts(); },
-        error: () => this.showToast('Error', true)
+        next: (res) => { 
+          this.showToast(res.message || 'Producto eliminado correctamente'); 
+          this.loadProducts(); 
+        },
+        error: (err) => {
+          console.error('Error deleting product:', err);
+          this.showToast('Error al intentar eliminar el producto', true);
+        }
       });
     }
   }
@@ -311,5 +317,20 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   viewStore(slug: string) {
     window.open(environment.storeUrl + '/' + slug, '_blank');
+  }
+
+  onPasswordChange(newPassword: string, settingsComp: SettingsComponent) {
+    this.authService.updatePassword(newPassword).then(
+      ({ error }) => {
+        if (error) {
+          settingsComp.setPasswordFeedback(error.message, true);
+        } else {
+          settingsComp.setPasswordFeedback('¡Contraseña actualizada correctamente!', false);
+          this.showToast('Contraseña actualizada');
+        }
+      }
+    ).catch(err => {
+      settingsComp.setPasswordFeedback('Error al actualizar contraseña', true);
+    });
   }
 }

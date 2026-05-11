@@ -19,12 +19,6 @@ import { Subscription } from 'rxjs';
         </div>
 
         <div class="auth-section">
-          <!-- Tabs -->
-          <div class="auth-tabs" *ngIf="mode === 'login' || mode === 'register'">
-            <button [class.active]="mode === 'login'" (click)="mode = 'login'">Ingresar</button>
-            <button [class.active]="mode === 'register'" (click)="mode = 'register'">Crear Tienda</button>
-          </div>
-
           <!-- Login Form -->
           <form *ngIf="mode === 'login'" (ngSubmit)="onLogin()">
             <div class="form-group">
@@ -40,24 +34,6 @@ import { Subscription } from 'rxjs';
             <button type="submit" class="submit-btn" [disabled]="loading">
               {{ loading ? 'Cargando...' : 'Iniciar Sesión' }}
             </button>
-          </form>
-
-          <!-- Register Form -->
-          <form *ngIf="mode === 'register'" (ngSubmit)="onRegister()">
-            <div class="form-group">
-              <label>Correo Electrónico</label>
-              <input type="email" [(ngModel)]="email" name="email" required>
-            </div>
-            <div class="form-group">
-              <label>Contraseña (mínimo 6 caracteres)</label>
-              <input type="password" [(ngModel)]="password" name="password" required>
-            </div>
-            <div class="msg error" *ngIf="errorMsg">{{ errorMsg }}</div>
-            <div class="msg success" *ngIf="successMsg">{{ successMsg }}</div>
-            <button type="submit" class="submit-btn" [disabled]="loading">
-              {{ loading ? 'Creando tienda...' : 'Registrarse' }}
-            </button>
-            <p class="hint">Al registrarte, podrás configurar el nombre y la URL de tu tienda en el panel de administración.</p>
           </form>
 
           <!-- Forgot Password Form -->
@@ -137,7 +113,7 @@ import { Subscription } from 'rxjs';
   `]
 })
 export class HomeComponent implements OnDestroy {
-  mode: 'login' | 'register' | 'forgot' | 'update-password' = 'login';
+  mode: 'login' | 'forgot' | 'update-password' = 'login';
   email = '';
   password = '';
   loading = false;
@@ -178,24 +154,6 @@ export class HomeComponent implements OnDestroy {
       this.router.navigate(['/']);
     }
     this.cdr.detectChanges();
-  }
-
-  async onRegister() {
-    this.errorMsg = ''; this.successMsg = '';
-    if (!this.email || !this.password) { this.errorMsg = 'Por favor ingresa todos los campos'; return; }
-    if (this.password.length < 6) { this.errorMsg = 'La contraseña debe tener al menos 6 caracteres'; return; }
-    this.loading = true;
-    try {
-      const { error } = await this.authService.signUp(this.email, this.password);
-      if (error) throw error;
-      this.successMsg = '¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.';
-      this.email = ''; this.password = '';
-    } catch (err: any) {
-      this.errorMsg = err.message || 'Error al registrar';
-    } finally {
-      this.loading = false;
-      this.cdr.detectChanges();
-    }
   }
 
   async onForgotPassword() {

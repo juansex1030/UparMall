@@ -21,20 +21,23 @@ async function bootstrap() {
     adminUrl, 
     storeUrl,
     'https://www.admin.uparmall.com',
-    'https://www.uparmall.com'
+    'https://www.uparmall.com',
+    'https://upar-mall.vercel.app',
+    'https://admin-upar.pages.dev'
   ];
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // En producción solo permitimos los dominios oficiales.
-      // En desarrollo permitimos localhost y 127.0.0.1
-      if (!isProduction) {
-        if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-          return callback(null, true);
-        }
-      }
-      
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      // Permitimos si:
+      // 1. Es desarrollo (no origin o localhost)
+      // 2. El origin está en nuestra lista blanca
+      // 3. El origin contiene 'uparmall.com' (para subdominios dinámicos y móvil)
+      if (
+        !isProduction || 
+        !origin || 
+        allowedOrigins.includes(origin) || 
+        origin.includes('uparmall.com')
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Acceso no permitido por política CORS'));

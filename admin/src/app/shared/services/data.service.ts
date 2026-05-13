@@ -18,7 +18,7 @@ export class DataService {
   }
 
   getMyProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.apiUrl}/products/my-products`).pipe(timeout(10000));
+    return this.http.get<Product[]>(`${this.apiUrl}/products/my-products`).pipe(timeout(15000));
   }
 
   getProduct(id: number): Observable<Product> {
@@ -43,7 +43,7 @@ export class DataService {
   }
 
   getMySettings(): Observable<Settings> {
-    return this.http.get<Settings>(`${this.apiUrl}/settings`).pipe(timeout(10000));
+    return this.http.get<Settings>(`${this.apiUrl}/settings`).pipe(timeout(15000));
   }
 
   updateSettings(settings: Partial<Settings>): Observable<Settings> {

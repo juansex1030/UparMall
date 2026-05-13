@@ -23,9 +23,8 @@ export class SettingsController {
 
   @UseGuards(SupabaseAuthGuard)
   @Patch()
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false }))
   update(
-    @Body() updateSettingDto: UpdateSettingDto, 
+    @Body() updateSettingDto: any, 
     @User() user: any
   ) {
     return this.settingsService.update(updateSettingDto, user.id);

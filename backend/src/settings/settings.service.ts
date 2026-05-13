@@ -106,9 +106,9 @@ export class SettingsService {
       throw error;
     }
     
-    // Flatten the result a bit for convenience
     return {
       ...settings,
+      mode: (settings as any).mode || 'standard',
       slug: settings.Stores?.slug
     };
   }
@@ -176,6 +176,7 @@ export class SettingsService {
     
     return {
       ...data,
+      mode: (data as any).mode || 'standard',
       slug: slug || (data as any).slug // Devolvemos el slug actualizado o el anterior
     };
   }

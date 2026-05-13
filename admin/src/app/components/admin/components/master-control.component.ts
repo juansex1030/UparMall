@@ -67,6 +67,52 @@ import { DataService } from '../../../shared/services/data.service';
         </div>
       </div>
 
+      <!-- Store Requests (Leads) Table -->
+      <div class="s-section" style="margin-bottom: 40px; padding: 0; overflow: hidden; border-color: #6366f1;">
+        <div style="padding: 25px; border-bottom: 1px solid #f1f5f9; background: #f8faff; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 1.3rem; color: #6366f1;">Solicitudes de Tiendas</h3>
+          <span class="badge" style="background: #e0e7ff; color: #6366f1;">{{ safeLeads.length }} Pendientes</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="master-table">
+            <thead>
+              <tr>
+                <th>Candidato</th>
+                <th>Contacto</th>
+                <th>Mensaje</th>
+                <th>Fecha</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let lead of safeLeads">
+                <td><span style="font-weight: 850;">{{ lead.name }}</span></td>
+                <td>
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 700; font-size: 0.85rem;">{{ lead.email }}</span>
+                    <span style="color: #64748b; font-size: 0.8rem;">{{ lead.phone }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div style="max-width: 200px; font-size: 0.8rem; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="lead.message">
+                    {{ lead.message || 'Sin mensaje' }}
+                  </div>
+                </td>
+                <td>{{ lead.created_at | date:'dd/MM HH:mm' }}</td>
+                <td>
+                  <button class="btn-action btn-approve" (click)="approveLead(lead)">
+                    <i class="fas fa-check"></i> Aprobar
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="safeLeads.length === 0">
+                <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No hay solicitudes nuevas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Global Stores Table -->
       <div class="s-section" style="margin-bottom: 40px; padding: 0; overflow: hidden;">
         <div style="padding: 25px; border-bottom: 1px solid #f1f5f9;">
@@ -199,6 +245,8 @@ import { DataService } from '../../../shared/services/data.service';
       display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; transition: 0.3s;
     }
     .btn-light { background: white; border-color: #e2e8f0; color: #64748b; }
+    .btn-approve { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .btn-approve:hover { background: #166534; color: white; border-color: #166534; }
     .btn-dian { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
     .btn-dian:hover { background: #c2410c; color: white; border-color: #c2410c; }
 
@@ -214,6 +262,7 @@ import { DataService } from '../../../shared/services/data.service';
 export class MasterControlComponent {
   @Input() stores: any[] = [];
   @Input() orders: any[] = [];
+  @Input() leads: any[] = [];
   @Output() viewStore = new EventEmitter<string>();
   @Output() refresh = new EventEmitter<void>();
 
@@ -227,6 +276,14 @@ export class MasterControlComponent {
 
   get safeStores() { return this.stores || []; }
   get safeOrders() { return this.orders || []; }
+  get safeLeads() { return this.leads || []; }
+
+  approveLead(lead: any) {
+    this.newUserEmail = lead.email;
+    window.scrollTo({ top: 100, behavior: 'smooth' });
+    this.message = `Preparando alta para ${lead.name}. Pulsa 'Dar de Alta' para confirmar.`;
+    this.isError = false;
+  }
 
   onCreateStore() {
     if (!this.newUserEmail) return;

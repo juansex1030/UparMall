@@ -61,6 +61,14 @@ export class DataService {
     return this.http.get<any[]>(`${this.apiUrl}/master/stores`);
   }
 
+  getPublicStores(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/public/stores`);
+  }
+
+  submitLead(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/public/contact`, data);
+  }
+
   // Orders
   createOrder(order: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/orders`, order);

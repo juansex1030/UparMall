@@ -62,6 +62,23 @@ export class MasterController {
     return data || [];
   }
 
+  @Get('leads')
+  async getAllLeads(@User() user: any) {
+    this.checkSuperAdmin(user);
+
+    const { data, error } = await this.supabase.adminClient
+      .from('Leads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Master Leads Error:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
   @Post('create-store')
   async createStore(@User() user: any, @Body() body: { email: string; password?: string }) {
     this.checkSuperAdmin(user);

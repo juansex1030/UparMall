@@ -1,4 +1,4 @@
-import { Component, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -112,7 +112,7 @@ import { Subscription } from 'rxjs';
     .msg.success { background: #f0fff4; color: #27ae60; border: 1px solid #c3e6cb; }
   `]
 })
-export class HomeComponent implements OnDestroy {
+export class HomeComponent implements OnInit, OnDestroy {
   mode: 'login' | 'forgot' | 'update-password' = 'login';
   email = '';
   password = '';
@@ -120,6 +120,13 @@ export class HomeComponent implements OnDestroy {
   errorMsg = '';
   successMsg = '';
   private _authSub!: Subscription;
+
+  async ngOnInit() {
+    const session = await this.authService.getSession();
+    if (session) {
+      this.router.navigate(['/']);
+    }
+  }
 
   private setMode(m: typeof this.mode) {
     this.mode = m;

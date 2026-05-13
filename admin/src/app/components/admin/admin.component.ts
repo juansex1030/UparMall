@@ -45,6 +45,7 @@ export class AdminComponent implements OnInit, OnDestroy {
   settings: Settings | null = null;
   masterStores: any[] = [];
   masterOrders: any[] = [];
+  masterLeads: any[] = [];
   isSuperAdmin = false;
   selectedOrder: any = null;
 
@@ -120,6 +121,10 @@ export class AdminComponent implements OnInit, OnDestroy {
     this.dataService.getMasterOrders().subscribe({
       next: (data) => this.masterOrders = data,
       error: () => this.showToast('Error cargando ventas globales', true)
+    });
+    this.dataService.getMasterLeads().subscribe({
+      next: (data) => this.masterLeads = data,
+      error: () => this.showToast('Error cargando solicitudes', true)
     });
   }
 

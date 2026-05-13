@@ -164,6 +164,7 @@
           *ngIf="isSuperAdmin"
           [stores]="masterStores"
           [orders]="masterOrders"
+          [leads]="masterLeads"
           (viewStore)="viewStore($event)"
           (refresh)="loadMasterData()">
         </app-master-control>

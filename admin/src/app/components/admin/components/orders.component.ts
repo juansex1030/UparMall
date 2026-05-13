@@ -152,9 +152,15 @@ import { Order } from '@shared/models/models';
     .status-pill-select[data-status="entregado"] { background-color: #f1f5f9; color: #475569; }
     .status-pill-select[data-status="cancelado"] { background-color: #fee2e2; color: #991b1b; }
 
-    .actions-cell { display: flex; gap: 8px; }
-    .btn-circle { width: 36px; height: 36px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; color: #64748b; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; text-decoration: none; }
-    .btn-circle:hover { transform: scale(1.1); background: #0f172a; color: white; }
+    .actions-cell { display: flex; gap: 10px; align-items: center; }
+    .btn-circle { 
+      width: 40px; height: 40px; border-radius: 12px; border: 1px solid #e2e8f0; 
+      background: white; color: #64748b; display: flex; align-items: center; 
+      justify-content: center; cursor: pointer; transition: 0.2s; text-decoration: none;
+      box-sizing: border-box; padding: 0;
+    }
+    .btn-circle i { font-size: 1.1rem; }
+    .btn-circle:hover { transform: translateY(-2px); background: #0f172a; color: white; border-color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .btn-circle.wa:hover { background: #22c55e; border-color: #22c55e; }
     .btn-circle.del:hover { background: #ef4444; border-color: #ef4444; }
 

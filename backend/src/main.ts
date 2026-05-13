@@ -28,18 +28,21 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Permitimos si:
-      // 1. Es desarrollo (no origin o localhost)
-      // 2. El origin está en nuestra lista blanca
-      // 3. El origin contiene 'uparmall.com' (para subdominios dinámicos y móvil)
+      if (!isProduction || !origin) {
+        return callback(null, true);
+      }
+
+      // Normalizar origin: quitar barra al final para evitar errores en móviles
+      const cleanOrigin = origin.replace(/\/$/, '');
+
       if (
-        !isProduction || 
-        !origin || 
-        allowedOrigins.includes(origin) || 
-        origin.includes('uparmall.com')
+        allowedOrigins.includes(cleanOrigin) || 
+        cleanOrigin.includes('uparmall.com') ||
+        cleanOrigin.includes('vercel.app')
       ) {
         callback(null, true);
       } else {
+        console.error(`Bloqueado por CORS: ${origin}`);
         callback(new Error('Acceso no permitido por política CORS'));
       }
     },

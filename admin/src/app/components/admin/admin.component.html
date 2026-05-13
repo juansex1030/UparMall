@@ -56,12 +56,7 @@
             (click)="setActiveTab('analytics')">
             <i class="fas fa-chart-line" style="margin-right: 8px;"></i> Estadísticas
           </button>
-          <button 
-            class="tab-btn" 
-            [class.active]="activeTab === 'loyalty'" 
-            (click)="setActiveTab('loyalty')">
-            <i class="fas fa-heart" style="margin-right: 8px;"></i> Fidelización
-          </button>
+
           <button 
             class="tab-btn" 
             [class.active]="activeTab === 'settings'" 
@@ -140,9 +135,7 @@
         <app-analytics></app-analytics>
       </div>
       
-      <div *ngSwitchCase="'loyalty'">
-        <app-loyalty [orders]="orders"></app-loyalty>
-      </div>
+
 
       <div *ngSwitchCase="'settings'">
         <app-settings #settingsComp

@@ -37,7 +37,7 @@ import { LoyaltyComponent } from './components/loyalty.component';
   styleUrls: ['./admin.component.css']
 })
 export class AdminComponent implements OnInit, OnDestroy {
-  activeTab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' | 'loyalty' = 'products';
+  activeTab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' = 'products';
   orders: Order[] = [];
   products: Product[] = [];
   categories: string[] = ['Todos'];
@@ -70,7 +70,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const savedTab = localStorage.getItem('admin_active_tab');
-    if (savedTab && ['products', 'settings', 'master', 'orders', 'analytics', 'loyalty'].includes(savedTab)) {
+    if (savedTab && ['products', 'settings', 'master', 'orders', 'analytics'].includes(savedTab)) {
       this.activeTab = savedTab as any;
     }
 
@@ -93,14 +93,14 @@ export class AdminComponent implements OnInit, OnDestroy {
     clearTimeout(this.toastTimer);
   }
 
-  setActiveTab(tab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' | 'loyalty') {
+  setActiveTab(tab: 'products' | 'settings' | 'master' | 'orders' | 'analytics') {
     this.activeTab = tab;
     localStorage.setItem('admin_active_tab', tab);
     
     // Acciones adicionales por pestaña
-    if (tab === 'orders' || tab === 'loyalty') this.loadOrders();
+    if (tab === 'orders') this.loadOrders();
     if (tab === 'master') this.loadMasterData();
-    if (tab === 'products' || tab === 'analytics' || tab === 'loyalty') this.showForm = false;
+    if (tab === 'products' || tab === 'analytics') this.showForm = false;
   }
 
   checkSuperAdmin(email?: string) {

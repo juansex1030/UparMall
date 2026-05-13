@@ -6,17 +6,18 @@ import { User } from '../auth/user.decorator';
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService
+  ) {}
 
   @Get(':slug')
-  findBySlug(@Param('slug') slug: string) {
+  async getSettings(@Param('slug') slug: string) {
     return this.settingsService.findBySlug(slug);
   }
 
   @UseGuards(SupabaseAuthGuard)
   @Get()
   findMySettings(@User() user: any) {
-    console.log('Fetching settings for user:', user.id, user.email);
     return this.settingsService.findByStoreId(user.id);
   }
 

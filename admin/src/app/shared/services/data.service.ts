@@ -77,6 +77,30 @@ export class DataService {
     return this.http.post<any>(`${this.apiUrl}/master/reset-password`, { userId, password });
   }
 
+  deleteMasterLead(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/master/delete-lead`, { id });
+  }
+
+  deleteMasterStore(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/master/delete-store`, { id });
+  }
+
+  getPlatformSettings(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/master/platform-settings`);
+  }
+
+  updatePlatformSettings(settings: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/master/platform-settings`, settings);
+  }
+
+  toggleMasterFeatured(id: string, is_featured: boolean): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/master/toggle-featured`, { id, is_featured });
+  }
+
+  getAuditLogs(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/master/audit-logs`);
+  }
+
   // Orders
   createOrder(order: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/orders`, order);

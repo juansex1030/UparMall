@@ -1,13 +1,23 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { DataService } from './shared/services/data.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class AppComponent {
-  title = 'frontend';
+  platformSettings: any = null;
+
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.dataService.getPlatformSettings().subscribe({
+      next: (res) => this.platformSettings = res,
+      error: (err) => console.error('Error fetching global settings', err)
+    });
+  }
 }

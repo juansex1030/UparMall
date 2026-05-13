@@ -209,14 +209,14 @@ import { FormsModule } from '@angular/forms';
     .slider-track { 
       display: flex; 
       width: max-content; 
-      animation: scroll 30s linear infinite; 
+      animation: scroll 40s linear infinite; 
       gap: 50px; 
     }
     .slider-track:hover { animation-play-state: paused; }
 
     .store-logo-item { 
       display: flex; flex-direction: column; align-items: center; gap: 15px; 
-      cursor: pointer; transition: 0.3s; width: 140px;
+      cursor: pointer; transition: 0.3s; width: 160px; flex-shrink: 0;
     }
     .logo-wrapper { 
       width: 110px; height: 110px; border-radius: 28px; background: rgba(255,255,255,0.1); padding: 18px;
@@ -304,8 +304,24 @@ export class LandingComponent implements OnInit {
   ngOnInit() {
     this.dataService.getPublicStores().subscribe({
       next: (data) => {
-        this.stores = data;
-        this.infiniteStoresList = [...data, ...data];
+        // 1. Separamos destacadas de las normales
+        const featured = data.filter(s => s.is_featured);
+        // 2. Aleatorizamos las normales
+        const others = data.filter(s => !s.is_featured).sort(() => Math.random() - 0.5);
+        
+        // 3. Unimos: primero las destacadas, luego el resto al azar
+        const displayData = [...featured, ...others];
+
+        if (displayData.length > 0) {
+          const itemWidth = 210;
+          const targetWidth = 4000;
+          const repetitions = Math.max(2, Math.ceil(targetWidth / (displayData.length * itemWidth)) * 2);
+          
+          this.infiniteStoresList = [];
+          for (let i = 0; i < repetitions; i++) {
+            this.infiniteStoresList.push(...displayData);
+          }
+        }
       },
       error: (err) => console.error('Error fetching stores:', err)
     });

@@ -100,9 +100,14 @@ import { DataService } from '../../../shared/services/data.service';
                 </td>
                 <td>{{ lead.created_at | date:'dd/MM HH:mm' }}</td>
                 <td>
-                  <button class="btn-action btn-approve" (click)="approveLead(lead)">
-                    <i class="fas fa-check"></i> Aprobar
-                  </button>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn-action btn-approve" (click)="approveLead(lead)">
+                      <i class="fas fa-check"></i> Aprobar
+                    </button>
+                    <button class="btn-action btn-reject" (click)="onRejectLead(lead.id, lead.name)" title="Eliminar solicitud">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="safeLeads.length === 0">
@@ -135,11 +140,17 @@ import { DataService } from '../../../shared/services/data.service';
                 <td>{{ store.ownerEmail }}</td>
                 <td>
                   <div style="display: flex; gap: 8px;">
+                    <button class="btn-action" [class.btn-light]="!store.is_featured" [style.color]="store.is_featured ? '#f59e0b' : '#64748b'" (click)="onToggleFeatured(store)" title="Destacar Tienda">
+                      <i class="fas fa-star"></i>
+                    </button>
                     <button class="btn-action" (click)="viewStore.emit(store.slug)">
                       <i class="fas fa-external-link-alt"></i> Visitar
                     </button>
                     <button class="btn-action btn-light" (click)="onResetPassword(store.id, store.ownerEmail)" title="Reiniciar Contraseña">
                       <i class="fas fa-key"></i> Reset
+                    </button>
+                    <button class="btn-action btn-reject" (click)="onDeleteStore(store.id, store.businessName || store.slug)" title="Eliminar Tienda">
+                      <i class="fas fa-trash"></i>
                     </button>
                   </div>
                 </td>
@@ -197,6 +208,81 @@ import { DataService } from '../../../shared/services/data.service';
           </table>
         </div>
       </div>
+
+      <!-- NEW: Platform Settings & Maintenance -->
+      <div class="s-section" style="margin-bottom: 40px; border-color: #f59e0b;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+           <h3 style="margin: 0; font-size: 1.5rem; color: #d97706;">Ajustes de Plataforma</h3>
+           <span class="badge" style="background: #fef3c7; color: #d97706;" *ngIf="platformSettings?.maintenance_mode">MODO MANTENIMIENTO ACTIVO</span>
+        </div>
+
+        <div class="create-store-form" style="background: #fffbeb;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div class="f-group">
+              <label>Anuncio Global (Banner)</label>
+              <textarea [(ngModel)]="platformSettings.announcement_text" class="m-input" style="height: 100px; resize: none;" placeholder="Escribe un aviso para todas las tiendas..."></textarea>
+              <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" [(ngModel)]="platformSettings.announcement_active" id="annActive">
+                <label for="annActive" style="margin: 0; text-transform: none; cursor: pointer;">Mostrar anuncio en el sitio</label>
+              </div>
+            </div>
+            <div class="f-group">
+              <label>Estado del Sistema</label>
+              <div style="background: white; padding: 20px; border-radius: 16px; border: 2px solid #fde68a;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <h4 style="margin: 0; color: #92400e;">Modo Mantenimiento</h4>
+                    <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #b45309;">Si se activa, el acceso a las tiendas estará bloqueado.</p>
+                  </div>
+                  <input type="checkbox" [(ngModel)]="platformSettings.maintenance_mode" style="width: 25px; height: 25px; cursor: pointer;">
+                </div>
+              </div>
+              <button class="btn-create" style="background: #d97706; margin-top: 20px;" [disabled]="isSavingSettings" (click)="saveSettings()">
+                <i class="fas fa-save" style="margin-right: 8px;"></i>
+                {{ isSavingSettings ? 'Guardando...' : 'Guardar Ajustes Globales' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW: Audit Logs -->
+      <div class="s-section" style="margin-bottom: 40px; padding: 0; overflow: hidden;">
+        <div style="padding: 25px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 1.3rem;">Log de Actividad (Últimos 50)</h3>
+          <button class="btn-action btn-light" (click)="loadMasterData()" style="padding: 6px 12px; font-size: 0.8rem;">
+            <i class="fas fa-sync-alt"></i> Actualizar Logs
+          </button>
+        </div>
+        <div class="table-wrapper">
+          <table class="master-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Detalles</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of auditLogs">
+                <td style="font-size: 0.8rem;">{{ log.created_at | date:'dd/MM HH:mm:ss' }}</td>
+                <td style="font-size: 0.8rem; font-weight: 800;">{{ log.user_email }}</td>
+                <td>
+                  <span class="badge" [style.background]="getActionColor(log.action)" style="color: white;">
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td style="font-size: 0.8rem;">{{ log.details }}</td>
+              </tr>
+              <tr *ngIf="auditLogs.length === 0">
+                <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">No hay actividad registrada.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   `,
   styles: [`
@@ -247,6 +333,8 @@ import { DataService } from '../../../shared/services/data.service';
     .btn-light { background: white; border-color: #e2e8f0; color: #64748b; }
     .btn-approve { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
     .btn-approve:hover { background: #166534; color: white; border-color: #166534; }
+    .btn-reject { background: #fef2f2; color: #991b1b; border-color: #fecaca; padding: 12px 15px; }
+    .btn-reject:hover { background: #991b1b; color: white; border-color: #991b1b; }
     .btn-dian { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
     .btn-dian:hover { background: #c2410c; color: white; border-color: #c2410c; }
 
@@ -272,7 +360,28 @@ export class MasterControlComponent {
   message = '';
   isError = false;
 
+  // Advanced Features
+  platformSettings: any = { maintenance_mode: false, announcement_text: '', announcement_active: false };
+  auditLogs: any[] = [];
+  isLoadingSettings = false;
+  isSavingSettings = false;
+
   constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.loadMasterData();
+  }
+
+  loadMasterData() {
+    this.dataService.getPlatformSettings().subscribe({
+      next: (res) => this.platformSettings = res,
+      error: (err) => console.error('Error loading settings', err)
+    });
+    this.dataService.getAuditLogs().subscribe({
+      next: (res) => this.auditLogs = res,
+      error: (err) => console.error('Error loading logs', err)
+    });
+  }
 
   get safeStores() { return this.stores || []; }
   get safeOrders() { return this.orders || []; }
@@ -283,6 +392,19 @@ export class MasterControlComponent {
     window.scrollTo({ top: 100, behavior: 'smooth' });
     this.message = `Preparando alta para ${lead.name}. Pulsa 'Dar de Alta' para confirmar.`;
     this.isError = false;
+  }
+
+  onRejectLead(id: string, name: string) {
+    if (confirm(`¿Estás seguro de que deseas rechazar y eliminar la solicitud de ${name}?`)) {
+      this.dataService.deleteMasterLead(id).subscribe({
+        next: () => {
+          this.refresh.emit();
+        },
+        error: (err) => {
+          alert('Error al eliminar la solicitud: ' + (err.error?.message || 'Error desconocido'));
+        }
+      });
+    }
   }
 
   onCreateStore() {
@@ -324,6 +446,58 @@ export class MasterControlComponent {
           alert('Error: ' + (err.error?.message || 'No se pudo reiniciar la contraseña'));
         }
       });
+    }
+  }
+
+  onDeleteStore(id: string, name: string) {
+    if (confirm(`¿ESTÁS SEGURO? Esta acción ELIMINARÁ COMPLETAMENTE la tienda "${name}" y todos sus productos, pedidos y configuraciones asociadas. Esta acción no se puede deshacer.`)) {
+      this.dataService.deleteMasterStore(id).subscribe({
+        next: () => {
+          alert('Tienda eliminada con éxito.');
+          this.refresh.emit();
+        },
+        error: (err) => {
+          alert('Error al eliminar la tienda: ' + (err.error?.message || 'Error desconocido'));
+        }
+      });
+    }
+  }
+
+  saveSettings() {
+    this.isSavingSettings = true;
+    this.dataService.updatePlatformSettings(this.platformSettings).subscribe({
+      next: () => {
+        this.isSavingSettings = false;
+        alert('Configuración guardada correctamente.');
+        this.loadMasterData();
+      },
+      error: (err) => {
+        this.isSavingSettings = false;
+        alert('Error al guardar: ' + (err.error?.message || 'Error desconocido'));
+      }
+    });
+  }
+
+  onToggleFeatured(store: any) {
+    const newVal = !store.is_featured;
+    this.dataService.toggleMasterFeatured(store.id, newVal).subscribe({
+      next: () => {
+        store.is_featured = newVal;
+        this.loadMasterData(); // Para refrescar logs
+      },
+      error: (err) => alert('Error: ' + (err.error?.message || 'No se pudo cambiar el estado'))
+    });
+  }
+
+  getActionColor(action: string): string {
+    switch(action) {
+      case 'CREATE_STORE': return '#10b981';
+      case 'DELETE_STORE': return '#ef4444';
+      case 'DELETE_LEAD': return '#f43f5e';
+      case 'UPDATE_SETTINGS': return '#f59e0b';
+      case 'TOGGLE_FEATURED': return '#6366f1';
+      case 'RESET_PASSWORD': return '#8b5cf6';
+      default: return '#94a3b8';
     }
   }
 

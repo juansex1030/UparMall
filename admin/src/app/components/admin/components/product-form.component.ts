@@ -32,8 +32,29 @@ import { Product } from '@shared/models/models';
               <input type="text" [(ngModel)]="product.name" placeholder="Ej: Cargador iPhone 20W">
             </div>
             <div class="f-group">
+              <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <span class="f-label">Estado Público</span>
+                <div class="status-badge" [class.active]="product.isActive">
+                  {{ product.isActive ? 'ACTIVO' : 'BORRADOR' }}
+                </div>
+              </div>
+              <div class="status-toggle-container" (click)="product.isActive = !product.isActive">
+                <span style="font-size: 0.8rem; font-weight: 800; color: #64748b;">
+                  {{ product.isActive ? 'Visible en la tienda' : 'Oculto para clientes' }}
+                </span>
+                <div class="ios-toggle-compact" [class.active]="product.isActive">
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-grid" style="margin-top: 15px;">
+            <div class="f-group">
               <span class="f-label">Categoría</span>
               <input type="text" [(ngModel)]="product.category" placeholder="Ej: Electrónica">
+            </div>
+            <div class="f-group">
+              <!-- Espacio para futura propiedad -->
             </div>
           </div>
           <div class="f-group">
@@ -90,19 +111,12 @@ import { Product } from '@shared/models/models';
           <div class="slim-section s-emerald flex-1">
             <div class="s-header"><i class="fas fa-dollar-sign"></i> Precio y Venta</div>
             <div class="price-flex">
-              <div class="price-input-wrap">
+              <div class="price-input-wrap" style="flex: 1;">
                 <span class="mini-label">Precio Final</span>
                 <div class="p-wrap">
                   <span class="c-tag">$</span>
                   <input type="number" [(ngModel)]="product.price" placeholder="0">
                 </div>
-              </div>
-              <div class="toggle-wrap">
-                <span class="mini-label">Estado</span>
-                <button class="btn-toggle-action" [class.active]="product.isActive" (click)="product.isActive = !product.isActive" [title]="product.isActive ? 'Ocultar' : 'Mostrar'">
-                  <i class="fas" [class.fa-eye]="product.isActive" [class.fa-eye-slash]="!product.isActive"></i>
-                  <span class="toggle-text">{{ product.isActive ? 'VISIBLE' : 'OCULTO' }}</span>
-                </button>
               </div>
             </div>
           </div>
@@ -128,10 +142,11 @@ import { Product } from '@shared/models/models';
                 </button>
               </div>
               <div class="opt-flex-wrap">
-                <div *ngFor="let opt of v.options; let j = index" class="opt-pill-modern">
-                  <button class="pill-check" [class.on]="opt.isAvailable !== false" (click)="opt.isAvailable = opt.isAvailable === false ? true : false">
-                    <i class="fas fa-check"></i>
-                  </button>
+                <div *ngFor="let opt of v.options; let j = index" class="opt-pill-modern" [class.disabled]="opt.isAvailable === false">
+                  <!-- iOS Style Switch for Variant availability -->
+                  <div class="ios-toggle-mini" [class.active]="opt.isAvailable !== false" (click)="opt.isAvailable = opt.isAvailable === false ? true : false" [title]="opt.isAvailable !== false ? 'Desactivar opción' : 'Activar opción'">
+                    <div class="toggle-handle"></div>
+                  </div>
                   
                   <!-- VARIANT IMAGE UPLOAD -->
                   <label class="variant-img-upload" [title]="opt.imageUrl ? 'Cambiar imagen' : 'Subir imagen'">
@@ -140,8 +155,8 @@ import { Product } from '@shared/models/models';
                     <input type="file" (change)="uploadVariantImage.emit({event: $event, vIdx: i, oIdx: j})" hidden accept="image/*">
                   </label>
 
-                  <input type="text" [(ngModel)]="opt.label" placeholder="Valor" class="p-input">
-                  <input type="number" [(ngModel)]="opt.price" placeholder="+$" class="p-price">
+                  <input type="text" [(ngModel)]="opt.label" placeholder="Valor" class="p-input" [disabled]="opt.isAvailable === false">
+                  <input type="number" [(ngModel)]="opt.price" placeholder="+$" class="p-price" [disabled]="opt.isAvailable === false">
                   <button class="pill-del" (click)="removeOption(i, j)" title="Borrar">×</button>
                 </div>
                 <button class="btn-add-pill" (click)="addOption(i)">+ AÑADIR OPCIÓN</button>
@@ -277,14 +292,43 @@ import { Product } from '@shared/models/models';
     .v-head-modern { display: flex; justify-content: space-between; gap: 15px; align-items: flex-end; margin-bottom: 15px; }
     .v-name-input { border-bottom: 2.5px solid #f1f5f9; border-radius: 0; font-size: 1rem; }
     .v-name-input:focus { border-color: #d97706; }
+
+    .status-badge { 
+      padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 900; 
+      background: #f1f5f9; color: #64748b; transition: 0.3s;
+    }
+    .status-badge.active { background: #dcfce7; color: #059669; }
+
+    .status-toggle-container { 
+      display: flex; justify-content: space-between; align-items: center; 
+      background: #fff; padding: 10px 15px; border-radius: 12px; border: 1.5px solid #e2e8f0;
+      cursor: pointer; transition: 0.2s;
+    }
+    .status-toggle-container:hover { border-color: #cbd5e1; background: #f8fafc; }
     
     .opt-flex-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
-    .opt-pill-modern { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 6px 12px; border-radius: 100px; border: 1.5px solid #cbd5e1; }
-    .pill-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #cbd5e1; background: #fff; color: transparent; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .pill-check.on { background: #059669; color: white; border-color: #059669; }
-    .p-input, .p-price { font-size: 0.85rem; font-weight: 900; }
+    .opt-pill-modern { 
+      display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 6px 15px; 
+      border-radius: 100px; border: 1.5px solid #cbd5e1; transition: 0.3s;
+    }
+    .opt-pill-modern.disabled { background: #f1f5f9; border-color: #e2e8f0; opacity: 0.7; }
+    
+    .ios-toggle-mini { 
+      width: 32px; height: 18px; background: #cbd5e1; border-radius: 100px; 
+      position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0;
+    }
+    .ios-toggle-mini.active { background: #059669; }
+    .ios-toggle-mini .toggle-handle { 
+      width: 14px; height: 14px; background: white; border-radius: 50%; 
+      position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); 
+    }
+    .ios-toggle-mini.active .toggle-handle { left: 16px; }
+
+    .p-input, .p-price { font-size: 0.85rem; font-weight: 900; background: transparent; border: none; padding: 4px; }
+    .p-input:focus, .p-price:focus { border-bottom: 1.5px solid #0f172a; border-radius: 0; }
     .p-input { width: 100px; color: #1e293b; } .p-price { width: 80px; color: #059669; }
-    .pill-del { color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+    .pill-del { color: #94a3b8; font-size: 1.2rem; cursor: pointer; border: none; background: none; }
+    .pill-del:hover { color: #ef4444; }
 
     .variant-img-upload { 
       width: 32px; height: 32px; border-radius: 8px; background: #fff; border: 1.5px solid #cbd5e1; 
@@ -307,7 +351,7 @@ import { Product } from '@shared/models/models';
 
     /* Toggle switch compacto */
     .ios-toggle-compact { width: 44px; height: 22px; background: #cbd5e1; border-radius: 100px; position: relative; cursor: pointer; transition: 0.3s; }
-    .ios-toggle-compact.active { background: #e11d48; }
+    .ios-toggle-compact.active { background: #059669; }
     .toggle-handle { width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .ios-toggle-compact.active .toggle-handle { left: 25px; }
 

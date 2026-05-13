@@ -27,7 +27,7 @@ export class MailService {
                 Ya puedes empezar a configurar tu tienda, añadir productos y digitalizar tu negocio.
               </p>
               <div style="margin-top: 30px;">
-                <a href="http://localhost:4201" style="background-color: #3f51b5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 30px; font-weight: bold; display: inline-block;">
+                <a href="${process.env.ADMIN_URL || 'https://admin.uparmall.com'}" style="background-color: #3f51b5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 30px; font-weight: bold; display: inline-block;">
                   Ir a mi Panel de Control
                 </a>
               </div>

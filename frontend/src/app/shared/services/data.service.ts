@@ -65,6 +65,10 @@ export class DataService {
     return this.http.get<any[]>(`${this.apiUrl}/public/stores`);
   }
 
+  getPlatformSettings(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/master/platform-settings`);
+  }
+
   submitLead(data: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/public/contact`, data);
   }

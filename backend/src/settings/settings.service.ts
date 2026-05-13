@@ -101,7 +101,6 @@ export class SettingsService {
         throw insertError;
       }
       
-      console.log('Default settings created successfully');
       settings = newSettings;
     } else if (error) {
       throw error;

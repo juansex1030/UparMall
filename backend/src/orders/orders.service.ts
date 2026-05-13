@@ -108,22 +108,26 @@ export class OrdersService {
   }
 
   async remove(id: string, storeId: string) {
-    // 1. Delete Order Items first (FK constraint)
-    await this.supabase.adminClient
+    // 1. Delete Order Items first (FK constraint) with explicit error check
+    const { error: itemsError } = await this.supabase.adminClient
       .from('OrderItems')
       .delete()
       .eq('order_id', id);
 
+    if (itemsError) {
+      console.error('Error deleting order items:', itemsError.message);
+    }
+
     // 2. Delete Order
-    const { error } = await this.supabase.adminClient
+    const { error: orderError } = await this.supabase.adminClient
       .from('Orders')
       .delete()
       .eq('id', id)
       .eq('store_id', storeId);
 
-    if (error) {
-      console.error('Error deleting order:', error.message);
-      throw new InternalServerErrorException('No se pudo eliminar el pedido');
+    if (orderError) {
+      console.error('Error deleting order:', orderError.message);
+      throw new InternalServerErrorException(`No se pudo eliminar el pedido: ${orderError.message}`);
     }
 
     return { success: true };
@@ -169,17 +173,24 @@ export class OrdersService {
       orders.forEach(order => {
         const dateStr = order.created_at.split('T')[0];
         const amount = Number(order.total) || 0;
+        const isDelivered = order.status === 'entregado';
 
-        // Global revenue
-        stats.totalRevenue += amount;
+        // Revenue ONLY for delivered orders
+        if (isDelivered) {
+          stats.totalRevenue += amount;
+          
+          // Daily aggregation only for delivered revenue
+          if (dailyData[dateStr]) {
+            dailyData[dateStr].total += amount;
+          }
+        }
 
-        // Daily aggregation
+        // We still count the order in quantity for historical purposes
         if (dailyData[dateStr]) {
-          dailyData[dateStr].total += amount;
           dailyData[dateStr].count += 1;
         }
 
-        // Product popularity
+        // Product popularity (counted even if not delivered yet, as it's demand)
         (order.OrderItems || []).forEach((item: any) => {
           const name = item.product_name || 'Producto Desconocido';
           productMap[name] = (productMap[name] || 0) + (item.quantity || 1);
@@ -206,7 +217,10 @@ export class OrdersService {
         stats.retention.percentage = Math.round((recurring / totalCustomers) * 100);
       }
 
-      stats.averageTicket = stats.totalOrders > 0 ? stats.totalRevenue / stats.totalOrders : 0;
+      // Calculate Average Ticket only on delivered orders
+      const deliveredOrders = orders.filter(o => o.status === 'entregado');
+      stats.averageTicket = deliveredOrders.length > 0 ? stats.totalRevenue / deliveredOrders.length : 0;
+      
       stats.dailySales = Object.keys(dailyData)
         .map(date => ({ date, ...dailyData[date] }))
         .sort((a, b) => a.date.localeCompare(b.date));

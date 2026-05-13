@@ -166,7 +166,12 @@ import { FormsModule } from '@angular/forms';
     }
     .nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
     .logo-group { display: flex; align-items: center; gap: 12px; }
-    .logo-group img { width: 36px; height: 36px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    .logo-group img { 
+      width: 40px; height: 40px; border-radius: 10px; 
+      background: white; padding: 4px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+      object-fit: contain;
+    }
     .logo-group span { font-weight: 800; font-size: 1.3rem; letter-spacing: -1px; color: white; }
     .btn-login { 
       text-decoration: none; color: white; font-weight: 700; font-size: 0.9rem; 

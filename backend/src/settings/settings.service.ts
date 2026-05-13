@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { slugify } from '../utils/slugify';
@@ -114,9 +114,9 @@ export class SettingsService {
   }
 
   async update(updateSettingDto: UpdateSettingDto & { slug?: string }, storeId: string) {
-    const { id: _, createdAt: __, slug, ...cleanData } = updateSettingDto as any;
+    const { id: _, createdAt: __, storeId: ___, slug, ...rawPayload } = updateSettingDto as any;
     
-    // Si se envía el slug, sanitizarlo y actualizarlo en la tabla Stores
+    // 1. ACTUALIZACIÓN DE SLUG (TABLA STORES) - Si viene el slug
     if (slug) {
       const cleanSlug = slugify(slug);
       const { error: storeError } = await this.supabase.adminClient
@@ -125,27 +125,58 @@ export class SettingsService {
         .eq('id', storeId);
       
       if (storeError) {
-        // Podría fallar si el slug ya existe (violación de restricción única)
-        throw new Error('El nombre de la URL ya está en uso por otra tienda. Elige uno diferente.');
+        console.error('Error actualizando Stores:', storeError);
+        if (storeError.code === '23505') {
+          throw new HttpException('La URL ya existe. Elige otra.', HttpStatus.CONFLICT);
+        }
       }
     }
 
-    const payload = {
-      ...cleanData
-    };
+    // 2. FILTRADO DE DATOS PARA TABLA SETTINGS
+    const validColumns = [
+      'businessName', 'logoUrl', 'primaryColor', 'secondaryColor', 'accentColor',
+      'backgroundColor', 'backgroundImageUrl', 'whatsappNumber', 'welcomeMessage',
+      'description', 'fontFamily', 'navbarStyle', 'cardStyle', 'socialLinks',
+      'heroSlides', 'businessHours', 'deliveryFee', 'hasDelivery', 'allowCashOnDelivery',
+      'address'
+    ];
 
-    const { data, error } = await this.supabase.adminClient
+    const finalPayload: any = {};
+    for (const key of validColumns) {
+      if (rawPayload[key] !== undefined) {
+        // Normalización de tipos
+        if (key === 'deliveryFee') {
+          finalPayload[key] = rawPayload[key] ? Number(rawPayload[key]) : 0;
+        } else if (key === 'hasDelivery' || key === 'allowCashOnDelivery') {
+          finalPayload[key] = Boolean(rawPayload[key]);
+        } else {
+          finalPayload[key] = rawPayload[key];
+        }
+      }
+    }
+
+    // 3. ACTUALIZACIÓN DE TABLA SETTINGS
+    console.log('--- DEBUG SETTINGS UPDATE ---');
+    console.log('Store ID:', storeId);
+    console.log('Payload:', JSON.stringify(finalPayload, null, 2));
+
+    const { data, error: updateError } = await this.supabase.adminClient
       .from('Settings')
-      .update(payload)
+      .update(finalPayload)
       .eq('storeId', storeId)
-      .select('*, Stores ( slug )')
+      .select()
       .single();
 
-    if (error) throw error;
+    if (updateError) {
+      console.error('ERROR CRÍTICO DB SETTINGS:', updateError);
+      throw new HttpException(`Error DB: ${updateError.message} (Código: ${updateError.code})`, HttpStatus.BAD_REQUEST);
+    }
+
+    console.log('Update Successful');
     
     return {
       ...data,
-      slug: data.Stores?.slug
+      slug: slug || (data as any).slug // Devolvemos el slug actualizado o el anterior
     };
   }
 }

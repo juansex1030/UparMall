@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Patch, UseGuards, Param } from '@nestjs/common';
+import { Controller, Get, Body, Patch, UseGuards, Param, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
@@ -23,7 +23,11 @@ export class SettingsController {
 
   @UseGuards(SupabaseAuthGuard)
   @Patch()
-  update(@Body() updateSettingDto: UpdateSettingDto, @User() user: any) {
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false }))
+  update(
+    @Body() updateSettingDto: UpdateSettingDto, 
+    @User() user: any
+  ) {
     return this.settingsService.update(updateSettingDto, user.id);
   }
 }

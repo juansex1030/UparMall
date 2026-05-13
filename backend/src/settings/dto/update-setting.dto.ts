@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsObject, IsNumber, IsBoolean } from 'class-validator';
 
 export class UpdateSettingDto {
   @IsString()
@@ -70,12 +70,15 @@ export class UpdateSettingDto {
   businessHours?: any[];
 
   @IsOptional()
+  @IsNumber()
   deliveryFee?: number;
 
   @IsOptional()
+  @IsBoolean()
   hasDelivery?: boolean;
 
   @IsOptional()
+  @IsBoolean()
   allowCashOnDelivery?: boolean;
 
   @IsString()

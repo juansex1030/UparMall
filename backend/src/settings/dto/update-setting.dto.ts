@@ -72,6 +72,12 @@ export class UpdateSettingDto {
   @IsOptional()
   deliveryFee?: number;
 
+  @IsOptional()
+  hasDelivery?: boolean;
+
+  @IsOptional()
+  allowCashOnDelivery?: boolean;
+
   @IsString()
   @IsOptional()
   address?: string;

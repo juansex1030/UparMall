@@ -6,7 +6,7 @@ import { User } from '../auth/user.decorator';
 @Controller('master')
 @UseGuards(SupabaseAuthGuard)
 export class MasterController {
-  private readonly adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com'];
+  private readonly adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com', 'manuel7xs@gmail.com'];
 
   constructor(private readonly supabase: SupabaseService) {}
 
@@ -88,6 +88,32 @@ export class MasterController {
       message: 'Usuario creado correctamente. La tienda se inicializará al primer acceso.', 
       userId: authData.user.id,
       email: authData.user.email
+    };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@User() user: any, @Body() body: { userId: string; password?: string }) {
+    this.checkSuperAdmin(user);
+
+    if (!body.userId) {
+      throw new BadRequestException('El ID de usuario es obligatorio');
+    }
+
+    const password = body.password || 'UparMall2026*';
+
+    const { data, error } = await this.supabase.adminClient.auth.admin.updateUserById(
+      body.userId,
+      { password: password }
+    );
+
+    if (error) {
+      console.error('Error resetting password:', error);
+      throw new BadRequestException(error.message);
+    }
+
+    return { 
+      message: 'Contraseña restablecida correctamente.', 
+      email: data.user.email
     };
   }
 }

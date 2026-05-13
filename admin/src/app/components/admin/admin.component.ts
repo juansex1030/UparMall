@@ -16,6 +16,7 @@ import { SettingsComponent } from './components/settings.component';
 import { MasterControlComponent } from './components/master-control.component';
 import { OrderDetailModalComponent } from './components/order-detail-modal.component';
 import { AnalyticsComponent } from './components/analytics.component';
+import { LoyaltyComponent } from './components/loyalty.component';
 
 @Component({
   selector: 'app-admin',
@@ -29,13 +30,14 @@ import { AnalyticsComponent } from './components/analytics.component';
     SettingsComponent,
     MasterControlComponent,
     OrderDetailModalComponent,
-    AnalyticsComponent
+    AnalyticsComponent,
+    LoyaltyComponent
   ],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css']
 })
 export class AdminComponent implements OnInit, OnDestroy {
-  activeTab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' = 'products';
+  activeTab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' | 'loyalty' = 'products';
   orders: Order[] = [];
   products: Product[] = [];
   categories: string[] = ['Todos'];
@@ -46,7 +48,7 @@ export class AdminComponent implements OnInit, OnDestroy {
   isSuperAdmin = false;
   selectedOrder: any = null;
 
-  private adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com'];
+  private adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com', 'manuel7xs@gmail.com'];
   toast = { visible: false, message: '', isError: false };
   private toastTimer: any;
   private _subs = new Subscription();
@@ -67,7 +69,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const savedTab = localStorage.getItem('admin_active_tab');
-    if (savedTab && ['products', 'settings', 'master', 'orders', 'analytics'].includes(savedTab)) {
+    if (savedTab && ['products', 'settings', 'master', 'orders', 'analytics', 'loyalty'].includes(savedTab)) {
       this.activeTab = savedTab as any;
     }
 
@@ -90,14 +92,14 @@ export class AdminComponent implements OnInit, OnDestroy {
     clearTimeout(this.toastTimer);
   }
 
-  setActiveTab(tab: 'products' | 'settings' | 'master' | 'orders' | 'analytics') {
+  setActiveTab(tab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' | 'loyalty') {
     this.activeTab = tab;
     localStorage.setItem('admin_active_tab', tab);
     
     // Acciones adicionales por pestaña
-    if (tab === 'orders') this.loadOrders();
+    if (tab === 'orders' || tab === 'loyalty') this.loadOrders();
     if (tab === 'master') this.loadMasterData();
-    if (tab === 'products' || tab === 'analytics') this.showForm = false;
+    if (tab === 'products' || tab === 'analytics' || tab === 'loyalty') this.showForm = false;
   }
 
   checkSuperAdmin(email?: string) {
@@ -302,6 +304,20 @@ export class AdminComponent implements OnInit, OnDestroy {
       this.dataService.uploadImage(file).subscribe({
         next: (res) => this.currentProduct.imageUrl = res.url,
         error: () => this.showToast('Error al subir imagen', true)
+      });
+    }
+  }
+
+  onVariantImageUpload(event: any, vIdx: number, oIdx: number) {
+    const file = event.target.files[0];
+    if (file) {
+      this.dataService.uploadImage(file).subscribe({
+        next: (res) => {
+          if (this.currentProduct.variants && this.currentProduct.variants[vIdx]) {
+            this.currentProduct.variants[vIdx].options[oIdx].imageUrl = res.url;
+          }
+        },
+        error: () => this.showToast('Error al subir imagen de variante', true)
       });
     }
   }

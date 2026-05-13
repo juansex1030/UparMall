@@ -132,6 +132,14 @@ import { Product } from '@shared/models/models';
                   <button class="pill-check" [class.on]="opt.isAvailable !== false" (click)="opt.isAvailable = opt.isAvailable === false ? true : false">
                     <i class="fas fa-check"></i>
                   </button>
+                  
+                  <!-- VARIANT IMAGE UPLOAD -->
+                  <label class="variant-img-upload" [title]="opt.imageUrl ? 'Cambiar imagen' : 'Subir imagen'">
+                    <i class="fas" [class.fa-image]="!opt.imageUrl" [class.fa-sync-alt]="opt.imageUrl"></i>
+                    <img *ngIf="opt.imageUrl" [src]="opt.imageUrl" class="mini-variant-prev">
+                    <input type="file" (change)="uploadVariantImage.emit({event: $event, vIdx: i, oIdx: j})" hidden accept="image/*">
+                  </label>
+
                   <input type="text" [(ngModel)]="opt.label" placeholder="Valor" class="p-input">
                   <input type="number" [(ngModel)]="opt.price" placeholder="+$" class="p-price">
                   <button class="pill-del" (click)="removeOption(i, j)" title="Borrar">×</button>
@@ -228,10 +236,12 @@ import { Product } from '@shared/models/models';
     }
     .btn-add-action.purple { background: #7c3aed; }
     .btn-add-action.orange { background: #d97706; }
-    .btn-add-action:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+    .btn-add-action:hover { transform: translateY(-2.5px) scale(1.02); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .btn-add-action:active { transform: translateY(0) scale(0.98); }
 
-    .btn-del-action { width: 38px; height: 38px; border-radius: 10px; border: none; background: #fee2e2; color: #ef4444; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-    .btn-del-action:hover { background: #ef4444; color: white; transform: scale(1.05); }
+    .btn-del-action { width: 38px; height: 38px; border-radius: 10px; border: none; background: #fee2e2; color: #ef4444; cursor: pointer; transition: 0.2s; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+    .btn-del-action:hover { background: #ef4444; color: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
+    .btn-del-action:active { transform: scale(0.95); }
 
     .s-list { display: flex; flex-direction: column; gap: 12px; }
     .s-item-row { display: flex; gap: 12px; align-items: flex-end; }
@@ -246,7 +256,8 @@ import { Product } from '@shared/models/models';
       background: white; border: 2px solid #cbd5e1; width: 48px; height: 48px; border-radius: 12px; 
       cursor: pointer; color: #1e293b; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-size: 1.2rem;
     }
-    .btn-upload-action:hover { border-color: #0f172a; color: #0f172a; background: #f1f5f9; }
+    .btn-upload-action:hover { border-color: #0f172a; color: #0f172a; background: #f1f5f9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .btn-upload-action:active { transform: translateY(0); }
 
     .p-wrap { position: relative; width: 100%; }
     .c-tag { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 950; color: #059669; font-size: 1.2rem; }
@@ -257,6 +268,8 @@ import { Product } from '@shared/models/models';
       color: #64748b; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px;
     }
     .btn-toggle-action.active { background: #0f172a; color: white; border-color: #0f172a; }
+    .btn-toggle-action:hover { transform: translateY(-2px); border-color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .btn-toggle-action:active { transform: translateY(0); }
     .toggle-text { font-size: 0.7rem; font-weight: 900; }
 
     .v-stack { display: flex; flex-direction: column; gap: 15px; }
@@ -270,8 +283,17 @@ import { Product } from '@shared/models/models';
     .pill-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #cbd5e1; background: #fff; color: transparent; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .pill-check.on { background: #059669; color: white; border-color: #059669; }
     .p-input, .p-price { font-size: 0.85rem; font-weight: 900; }
-    .p-input { width: 70px; color: #1e293b; } .p-price { width: 50px; color: #059669; }
+    .p-input { width: 100px; color: #1e293b; } .p-price { width: 80px; color: #059669; }
     .pill-del { color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+
+    .variant-img-upload { 
+      width: 32px; height: 32px; border-radius: 8px; background: #fff; border: 1.5px solid #cbd5e1; 
+      display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden;
+      font-size: 0.7rem; color: #64748b;
+    }
+    .variant-img-upload:hover { border-color: #0f172a; color: #0f172a; }
+    .mini-variant-prev { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .variant-img-upload i { position: relative; z-index: 1; text-shadow: 0 0 2px white; }
 
     .btn-add-pill { background: white; border: 2px dashed #cbd5e1; padding: 6px 18px; border-radius: 100px; font-size: 0.75rem; color: #1e293b; font-weight: 900; cursor: pointer; transition: 0.2s; }
     .btn-add-pill:hover { border-color: #0f172a; background: #f1f5f9; }
@@ -297,7 +319,10 @@ import { Product } from '@shared/models/models';
       font-weight: 950; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 1rem; 
       box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: 0.2s;
     }
-    .btn-footer-save:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+    .btn-footer-save:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 15px 35px rgba(0,0,0,0.3); background: #1e293b; }
+    .btn-footer-save:active { transform: translateY(0) scale(0.98); }
+    .btn-footer-cancel:hover { background: #e2e8f0; transform: translateY(-2px); }
+    .btn-footer-cancel:active { transform: translateY(0); }
   `]
 })
 export class ProductFormComponent {
@@ -308,6 +333,7 @@ export class ProductFormComponent {
   @Output() save = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
   @Output() uploadImage = new EventEmitter<any>();
+  @Output() uploadVariantImage = new EventEmitter<{ event: any, vIdx: number, oIdx: number }>();
 
   addVariantGroup() {
     if (!this.product.variants) this.product.variants = [];

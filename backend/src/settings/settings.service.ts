@@ -91,7 +91,9 @@ export class SettingsService {
         fontFamily: "'Inter', sans-serif",
         navbarStyle: 'glass',
         socialLinks: { instagram: '', facebook: '', tiktok: '' },
-        heroSlides: []
+        heroSlides: [],
+        hasDelivery: true,
+        allowCashOnDelivery: true
       }], { onConflict: 'storeId' }).select('*, Stores ( slug )').single();
 
       if (insertError) {

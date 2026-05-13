@@ -68,6 +68,8 @@ export interface Settings {
   };
   backgroundImageUrl?: string;
   deliveryFee?: number;
+  hasDelivery: boolean;
+  allowCashOnDelivery: boolean;
   address?: string;
 }
 

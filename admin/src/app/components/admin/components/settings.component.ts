@@ -61,9 +61,39 @@ import { Settings, Product } from '@shared/models/models';
                   <input type="text" [(ngModel)]="settings.slug" placeholder="tu-tienda">
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" [style.opacity]="settings.hasDelivery ? 1 : 0.5">
                 <label>Costo de Domicilio ($)</label>
-                <input type="number" [(ngModel)]="settings.deliveryFee" placeholder="Ej: 6000">
+                <input type="number" [(ngModel)]="settings.deliveryFee" [disabled]="!settings.hasDelivery" placeholder="Ej: 6000">
+              </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top: 10px; padding: 20px; background: #f8fafc; border-radius: 18px; border: 1px dashed #cbd5e1;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                  <i class="fas fa-truck" [style.color]="settings.hasDelivery ? '#0f172a' : '#94a3b8'"></i>
+                  Servicio de Domicilio
+                </label>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div class="ios-toggle" [class.active]="settings.hasDelivery" (click)="toggleDelivery()">
+                    <div class="toggle-handle"></div>
+                  </div>
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #475569;">{{ settings.hasDelivery ? 'ACTIVO' : 'INACTIVO' }}</span>
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-bottom: 0;" [style.opacity]="settings.hasDelivery ? 1 : 0.5">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                  <i class="fas fa-hand-holding-usd" [style.color]="settings.allowCashOnDelivery ? '#059669' : '#94a3b8'"></i>
+                  Pago Contraentrega
+                </label>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div class="ios-toggle" [class.active]="settings.allowCashOnDelivery" 
+                       (click)="settings.hasDelivery && (settings.allowCashOnDelivery = !settings.allowCashOnDelivery)">
+                    <div class="toggle-handle"></div>
+                  </div>
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #475569;">{{ settings.allowCashOnDelivery ? 'HABILITADO' : 'DESHABILITADO' }}</span>
+                </div>
+                <p *ngIf="!settings.hasDelivery" style="color: #ef4444; font-size: 0.65rem; font-weight: 800; margin: 5px 0 0 0;">Solo disponible con domicilio activo</p>
               </div>
             </div>
 
@@ -160,7 +190,7 @@ import { Settings, Product } from '@shared/models/models';
             <div class="section-header flex-header">
               <div>
                 <h3>Banners Publicitarios</h3>
-                <p>Imágenes que aparecerán en la parte superior de tu tienda.</p>
+                <p>Imágenes que aparecerán en la parte superior de tu tienda. <b>Recomendado: 1920x500px (Relación 4:1)</b></p>
               </div>
               <button class="btn-action btn-dark" (click)="addSlide.emit()">
                 <i class="fas fa-plus"></i> Nuevo Banner
@@ -386,7 +416,8 @@ import { Settings, Product } from '@shared/models/models';
       overflow: hidden;
     }
     .s-nav-item i { font-size: 1.2rem; margin: 0 !important; }
-    .s-nav-item:hover { background: #f1f5f9; color: #0f172a; }
+    .s-nav-item:hover { background: #f1f5f9; color: #0f172a; transform: translateX(5px); }
+    .s-nav-item:active { transform: translateX(0) scale(0.98); }
     .s-nav-item.active { background: #0f172a; color: white; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2); }
     
     /* Main sections */
@@ -440,7 +471,10 @@ import { Settings, Product } from '@shared/models/models';
       display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s;
     }
     .style-btn span { font-size: 0.9rem; font-weight: 900; color: #475569; }
+    .style-btn:hover { border-color: #0f172a; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.05); }
+    .style-btn:active { transform: translateY(0) scale(0.98); }
     .style-btn.active { border-color: #0f172a; background: #0f172a; }
+    .style-btn.active:hover { transform: none; box-shadow: none; }
     .style-btn.active span { color: white; }
     .style-icon { width: 44px; height: 14px; border-radius: 4px; }
     .style-icon.glass { background: rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.1); }
@@ -583,6 +617,14 @@ export class SettingsComponent {
   isUpdatingPassword = false;
   passwordMsg = '';
   isPasswordError = false;
+  
+  toggleDelivery() {
+    if (!this.settings) return;
+    this.settings.hasDelivery = !this.settings.hasDelivery;
+    if (!this.settings.hasDelivery) {
+      this.settings.allowCashOnDelivery = false;
+    }
+  }
 
   onChangePassword() {
     if (this.newPassword !== this.confirmPassword) {

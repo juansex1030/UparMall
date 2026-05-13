@@ -69,6 +69,10 @@ export class DataService {
     return this.http.post<any>(`${this.apiUrl}/master/create-store`, { email, password });
   }
 
+  resetMasterStorePassword(userId: string, password?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/master/reset-password`, { userId, password });
+  }
+
   // Orders
   createOrder(order: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/orders`, order);

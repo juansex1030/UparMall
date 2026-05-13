@@ -101,7 +101,15 @@ import { Product } from '@shared/models/models';
       transition: all 0.2s;
       font-size: 0.9rem;
     }
+    .cat-tab:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
     .cat-tab.active { background: #0f172a; color: white; border-color: #0f172a; }
+    .cat-tab.active:hover { transform: none; background: #0f172a; box-shadow: none; }
+    .cat-tab:active { transform: scale(0.96); }
 
     .product-grid-admin { 
       display: grid; 

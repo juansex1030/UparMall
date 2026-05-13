@@ -16,9 +16,14 @@ import { Order } from '@shared/models/models';
             </div>
             <h3>Gestión de Pedidos</h3>
           </div>
-          <button class="btn-action btn-light" (click)="refresh.emit()">
-            <i class="fas fa-sync-alt"></i> <span>Actualizar</span>
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-action btn-dian" (click)="exportToExcel()" *ngIf="orders.length > 0">
+              <i class="fas fa-file-excel"></i> <span>Exportar reporte de ventas</span>
+            </button>
+            <button class="btn-action btn-light" (click)="refresh.emit()">
+              <i class="fas fa-sync-alt"></i> <span>Actualizar</span>
+            </button>
+          </div>
         </div>
 
         <!-- Vista de Escritorio (Tabla) -->
@@ -178,6 +183,8 @@ import { Order } from '@shared/models/models';
 
     .btn-action { padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background: white; color: #64748b; transition: 0.2s; }
     .btn-action:hover { background: #0f172a; color: white; border-color: #0f172a; }
+    .btn-dian { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
+    .btn-dian:hover { background: #c2410c; color: white; border-color: #c2410c; }
 
     .desktop-only { display: block; }
     .mobile-only { display: none; }
@@ -203,5 +210,85 @@ export class OrdersComponent {
 
   cleanPhone(phone: string): string {
     return (phone || '').replace(/\D/g, '');
+  }
+
+  exportToExcel() {
+    if (this.orders.length === 0) return;
+
+    const fileName = `reporte_ventas_uparmall_${new Date().toISOString().split('T')[0]}.xls`;
+    
+    // Construir tabla HTML con estilos básicos para Excel
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Reporte de Ventas</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          .header { background-color: #0f172a; color: #ffffff; font-weight: bold; text-align: center; }
+          .cell { border: 0.5pt solid #cbd5e1; padding: 5px; }
+          .number { mso-number-format: "\\#\\,\\#\\#0"; }
+          .date { mso-number-format: "Short Date"; }
+          .title { font-size: 16pt; font-weight: bold; margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr><td colspan="7" class="title">REPORTE DE VENTAS - UparMall</td></tr>
+          <tr><td colspan="7">Fecha de generación: ${new Date().toLocaleString('es-CO')}</td></tr>
+          <tr><td colspan="7"></td></tr>
+          <tr class="header">
+            <td class="cell">Fecha</td>
+            <td class="cell">ID Pedido</td>
+            <td class="cell">Cliente</td>
+            <td class="cell">Teléfono</td>
+            <td class="cell">Método Pago</td>
+            <td class="cell">Total</td>
+            <td class="cell">Estado</td>
+          </tr>
+    `;
+
+    this.orders.forEach(order => {
+      html += `
+        <tr>
+          <td class="cell date">${new Date(order.created_at).toLocaleDateString('es-CO')}</td>
+          <td class="cell">${order.id}</td>
+          <td class="cell">${order.customer_name}</td>
+          <td class="cell">${order.customer_phone}</td>
+          <td class="cell">${order.payment_method}</td>
+          <td class="cell number">${order.total}</td>
+          <td class="cell" style="text-transform: uppercase;">${order.status}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }

@@ -88,9 +88,14 @@ import { DataService } from '../../../shared/services/data.service';
                 <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px;">/{{ store.slug }}</code></td>
                 <td>{{ store.ownerEmail }}</td>
                 <td>
-                  <button class="btn-action" (click)="viewStore.emit(store.slug)">
-                    <i class="fas fa-external-link-alt" style="margin-right: 6px;"></i> Visitar
-                  </button>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn-action" (click)="viewStore.emit(store.slug)">
+                      <i class="fas fa-external-link-alt"></i> Visitar
+                    </button>
+                    <button class="btn-action btn-light" (click)="onResetPassword(store.id, store.ownerEmail)" title="Reiniciar Contraseña">
+                      <i class="fas fa-key"></i> Reset
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -102,9 +107,14 @@ import { DataService } from '../../../shared/services/data.service';
       <div class="s-section" style="padding: 0; overflow: hidden;">
         <div style="padding: 25px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
           <h3 style="margin: 0; font-size: 1.3rem;">Ventas Recientes (Global)</h3>
-          <button class="btn-action btn-light" (click)="refresh.emit()">
-            <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> Refrescar
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-action btn-dian" (click)="exportToExcel()" *ngIf="safeOrders.length > 0">
+              <i class="fas fa-file-excel"></i> <span>Exportar reporte de ventas</span>
+            </button>
+            <button class="btn-action btn-light" (click)="refresh.emit()">
+              <i class="fas fa-sync-alt"></i> <span>Actualizar</span>
+            </button>
+          </div>
         </div>
         <div class="table-wrapper">
           <table class="admin-table">
@@ -189,6 +199,8 @@ import { DataService } from '../../../shared/services/data.service';
       display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; transition: 0.3s;
     }
     .btn-light { background: white; border-color: #e2e8f0; color: #64748b; }
+    .btn-dian { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
+    .btn-dian:hover { background: #c2410c; color: white; border-color: #c2410c; }
 
     .badge { padding: 4px 8px; border-radius: 6px; background: #f1f5f9; color: #475569; font-weight: 900; font-size: 0.65rem; }
 
@@ -237,5 +249,107 @@ export class MasterControlComponent {
         this.message = err.error?.message || 'Error al crear el usuario. Verifica si ya existe.';
       }
     });
+  }
+
+  onResetPassword(userId: string, email: string) {
+    const newPass = prompt(`Ingresa la nueva contraseña para ${email}:`, 'UparMall2026*');
+    if (!newPass) return;
+
+    if (confirm(`¿Estás seguro de que deseas reiniciar la contraseña de ${email}?`)) {
+      this.isCreating = true;
+      this.dataService.resetMasterStorePassword(userId, newPass).subscribe({
+        next: (res) => {
+          this.isCreating = false;
+          alert(res.message);
+        },
+        error: (err) => {
+          this.isCreating = false;
+          alert('Error: ' + (err.error?.message || 'No se pudo reiniciar la contraseña'));
+        }
+      });
+    }
+  }
+
+  exportToExcel() {
+    if (this.safeOrders.length === 0) return;
+
+    const fileName = `reporte_global_uparmall_${new Date().toISOString().split('T')[0]}.xls`;
+    
+    // Construir tabla HTML con estilos básicos para Excel
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Reporte Global</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          .header { background-color: #0f172a; color: #ffffff; font-weight: bold; text-align: center; }
+          .cell { border: 0.5pt solid #cbd5e1; padding: 5px; }
+          .number { mso-number-format: "\\#\\,\\#\\#0"; }
+          .date { mso-number-format: "Short Date"; }
+          .title { font-size: 16pt; font-weight: bold; margin-bottom: 20px; }
+          .store-badge { background-color: #f1f5f9; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr><td colspan="8" class="title">REPORTE GLOBAL DE VENTAS - UparMall</td></tr>
+          <tr><td colspan="8">Fecha de generación: ${new Date().toLocaleString('es-CO')}</td></tr>
+          <tr><td colspan="8"></td></tr>
+          <tr class="header">
+            <td class="cell">Tienda</td>
+            <td class="cell">Fecha</td>
+            <td class="cell">ID Pedido</td>
+            <td class="cell">Cliente</td>
+            <td class="cell">Teléfono</td>
+            <td class="cell">Método Pago</td>
+            <td class="cell">Total</td>
+            <td class="cell">Estado</td>
+          </tr>
+    `;
+
+    this.safeOrders.forEach(order => {
+      html += `
+        <tr>
+          <td class="cell store-badge">${(order.Stores?.slug || 'TIENDA').toUpperCase()}</td>
+          <td class="cell date">${new Date(order.created_at).toLocaleDateString('es-CO')}</td>
+          <td class="cell">${order.id}</td>
+          <td class="cell">${order.customer_name || order.customerName}</td>
+          <td class="cell">${order.customer_phone || order.customerPhone}</td>
+          <td class="cell">${order.payment_method || order.paymentMethod}</td>
+          <td class="cell number">${order.total}</td>
+          <td class="cell" style="text-transform: uppercase;">${order.status}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }

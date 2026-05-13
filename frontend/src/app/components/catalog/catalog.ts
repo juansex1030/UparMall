@@ -1312,14 +1312,14 @@ import { catchError, of, Subscription } from 'rxjs';
 
 
     /* About Section */
-    .about-section { padding: 80px 0; }
+    .about-section { padding: 40px 0; }
     .about-card { 
-      padding: 60px; border-radius: 40px; display: flex; align-items: center; gap: 60px;
+      padding: 30px 45px; border-radius: 25px; display: flex; align-items: center; gap: 40px;
       background: rgba(255,255,255,0.6) !important;
     }
     .about-content { flex: 1; }
-    .about-text { font-size: 1.25rem; line-height: 1.8; color: #444; font-weight: 500; }
-    .about-decoration { width: 180px; height: 180px; flex-shrink: 0; opacity: 0.2; filter: grayscale(1); }
+    .about-text { font-size: 1rem; line-height: 1.7; color: #444; font-weight: 500; }
+    .about-decoration { width: 100px; height: 100px; flex-shrink: 0; opacity: 0.2; filter: grayscale(1); }
     .about-decoration img { width: 100%; height: 100%; object-fit: contain; }
 
     @media (max-width: 768px) {

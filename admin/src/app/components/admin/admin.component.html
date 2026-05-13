@@ -58,6 +58,12 @@
           </button>
           <button 
             class="tab-btn" 
+            [class.active]="activeTab === 'loyalty'" 
+            (click)="setActiveTab('loyalty')">
+            <i class="fas fa-heart" style="margin-right: 8px;"></i> Fidelización
+          </button>
+          <button 
+            class="tab-btn" 
             [class.active]="activeTab === 'settings'" 
             (click)="setActiveTab('settings')">
             <i class="fas fa-cog" style="margin-right: 8px;"></i> Personalización
@@ -115,7 +121,8 @@
           [isSaving]="isSaving"
           (save)="saveProduct()"
           (close)="closeForm()"
-          (uploadImage)="onProductImageUpload($event)">
+          (uploadImage)="onProductImageUpload($event)"
+          (uploadVariantImage)="onVariantImageUpload($event.event, $event.vIdx, $event.oIdx)">
         </app-product-form>
       </div>
 
@@ -131,6 +138,10 @@
 
       <div *ngSwitchCase="'analytics'">
         <app-analytics></app-analytics>
+      </div>
+      
+      <div *ngSwitchCase="'loyalty'">
+        <app-loyalty [orders]="orders"></app-loyalty>
       </div>
 
       <div *ngSwitchCase="'settings'">

@@ -54,11 +54,11 @@ import { Subscription } from 'rxjs';
             <h4>Método de entrega</h4>
             <div class="radio-group">
               <label class="radio-label" [class.selected]="deliveryMethod === 'pickup'">
-                <input type="radio" name="delivery" value="pickup" [(ngModel)]="deliveryMethod">
+                <input type="radio" name="delivery" value="pickup" [(ngModel)]="deliveryMethod" (change)="onDeliveryChange()">
                 <span>Pasar a Recoger</span>
               </label>
-              <label class="radio-label" [class.selected]="deliveryMethod === 'delivery'">
-                <input type="radio" name="delivery" value="delivery" [(ngModel)]="deliveryMethod">
+              <label class="radio-label" [class.selected]="deliveryMethod === 'delivery'" *ngIf="settings?.hasDelivery">
+                <input type="radio" name="delivery" value="delivery" [(ngModel)]="deliveryMethod" (change)="onDeliveryChange()">
                 <span>Domicilio ({{ deliveryFee > 0 ? '+$' + (deliveryFee | number) : '¡Gratis!' }})</span>
               </label>
             </div>
@@ -121,6 +121,7 @@ import { Subscription } from 'rxjs';
                 <span>Transferencia</span>
               </button>
               <button 
+                *ngIf="settings?.allowCashOnDelivery && deliveryMethod === 'delivery'"
                 class="payment-pill" 
                 [class.active]="paymentMethod === 'contraentrega'"
                 (click)="paymentMethod = 'contraentrega'">
@@ -302,6 +303,12 @@ export class CartComponent implements OnInit, OnDestroy {
         next: (settings) => {
           this.settings = settings;
           this.deliveryFee = settings.deliveryFee || 0;
+          
+          // Ajustar método por defecto si la tienda no ofrece domicilio
+          if (!settings.hasDelivery) {
+            this.deliveryMethod = 'pickup';
+          }
+
           if (settings.primaryColor) {
             const hex = settings.primaryColor.replace('#', '');
             const r = parseInt(hex.substring(0, 2), 16);
@@ -319,6 +326,13 @@ export class CartComponent implements OnInit, OnDestroy {
       this.items = items;
       this.totalPrice = this.cartService.getTotalPrice();
     }));
+  }
+
+  onDeliveryChange() {
+    // Si cambia a recogida y tenía contraentrega, resetear a efectivo
+    if (this.deliveryMethod === 'pickup' && this.paymentMethod === 'contraentrega') {
+      this.paymentMethod = 'efectivo';
+    }
   }
 
   ngOnDestroy() {

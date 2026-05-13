@@ -175,7 +175,7 @@ export class OrdersService {
         const amount = Number(order.total) || 0;
         const isDelivered = order.status === 'entregado';
 
-        // Revenue ONLY for delivered orders
+        // Revenue and Product Popularity ONLY for delivered orders
         if (isDelivered) {
           stats.totalRevenue += amount;
           
@@ -183,18 +183,18 @@ export class OrdersService {
           if (dailyData[dateStr]) {
             dailyData[dateStr].total += amount;
           }
+
+          // Product popularity (ONLY for delivered orders now)
+          (order.OrderItems || []).forEach((item: any) => {
+            const name = item.product_name || 'Producto Desconocido';
+            productMap[name] = (productMap[name] || 0) + (item.quantity || 1);
+          });
         }
 
-        // We still count the order in quantity for historical purposes
+        // We still count the order in total quantity for historical volume purposes
         if (dailyData[dateStr]) {
           dailyData[dateStr].count += 1;
         }
-
-        // Product popularity (counted even if not delivered yet, as it's demand)
-        (order.OrderItems || []).forEach((item: any) => {
-          const name = item.product_name || 'Producto Desconocido';
-          productMap[name] = (productMap[name] || 0) + (item.quantity || 1);
-        });
 
         // Customer retention (by phone)
         const phone = order.customer_phone || 'Desconocido';

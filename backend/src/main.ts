@@ -17,7 +17,12 @@ async function bootstrap() {
   // 2. Restricted CORS
   const adminUrl = process.env['ADMIN_URL'] || 'https://admin.uparmall.com';
   const storeUrl = process.env['STORE_URL'] || 'https://uparmall.com';
-  const allowedOrigins = [adminUrl, storeUrl];
+  const allowedOrigins = [
+    adminUrl, 
+    storeUrl,
+    'https://www.admin.uparmall.com',
+    'https://www.uparmall.com'
+  ];
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {

@@ -138,7 +138,7 @@ export class SettingsService {
       'backgroundColor', 'backgroundImageUrl', 'whatsappNumber', 'welcomeMessage',
       'description', 'fontFamily', 'navbarStyle', 'cardStyle', 'socialLinks',
       'heroSlides', 'businessHours', 'deliveryFee', 'hasDelivery', 'allowCashOnDelivery',
-      'address'
+      'address', 'nit', 'guaranteeTerms'
     ];
 
     const finalPayload: any = {};

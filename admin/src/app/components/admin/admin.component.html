@@ -168,6 +168,7 @@
     <app-order-detail-modal
       *ngIf="selectedOrder"
       [order]="selectedOrder"
+      [settings]="settings"
       (close)="selectedOrder = null">
     </app-order-detail-modal>
 

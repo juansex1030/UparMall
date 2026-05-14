@@ -75,6 +75,8 @@ export interface Settings {
   hasDelivery: boolean;
   allowCashOnDelivery: boolean;
   address?: string;
+  nit?: string;
+  guaranteeTerms?: string;
 }
 
 export interface OrderItem {

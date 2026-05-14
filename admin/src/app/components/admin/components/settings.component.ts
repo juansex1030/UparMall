@@ -81,19 +81,18 @@ import { Settings, Product } from '@shared/models/models';
                 </div>
               </div>
               
-              <div class="form-group" style="margin-bottom: 0;" [style.opacity]="settings.hasDelivery ? 1 : 0.5">
+              <div class="form-group" style="margin-bottom: 0;">
                 <label style="display: flex; align-items: center; gap: 10px;">
                   <i class="fas fa-hand-holding-usd" [style.color]="settings.allowCashOnDelivery ? '#059669' : '#94a3b8'"></i>
                   Pago Contraentrega
                 </label>
                 <div style="display: flex; align-items: center; gap: 15px;">
                   <div class="ios-toggle" [class.active]="settings.allowCashOnDelivery" 
-                       (click)="settings.hasDelivery && (settings.allowCashOnDelivery = !settings.allowCashOnDelivery)">
+                       (click)="settings.allowCashOnDelivery = !settings.allowCashOnDelivery">
                     <div class="toggle-handle"></div>
                   </div>
                   <span style="font-weight: 800; font-size: 0.85rem; color: #475569;">{{ settings.allowCashOnDelivery ? 'HABILITADO' : 'DESHABILITADO' }}</span>
                 </div>
-                <p *ngIf="!settings.hasDelivery" style="color: #ef4444; font-size: 0.65rem; font-weight: 800; margin: 5px 0 0 0;">Solo disponible con domicilio activo</p>
               </div>
             </div>
 
@@ -102,9 +101,20 @@ import { Settings, Product } from '@shared/models/models';
               <textarea [(ngModel)]="settings.description" rows="4" placeholder="Escribe aquí la historia o descripción de tu negocio..."></textarea>
             </div>
 
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>NIT / Identificación Tributaria</label>
+                <input type="text" [(ngModel)]="settings.nit" placeholder="Ej: 900.123.456-1">
+              </div>
+              <div class="form-group">
+                <label>Dirección Física (Opcional)</label>
+                <input type="text" [(ngModel)]="settings.address" placeholder="Ej: Calle 123 #45-67, Barrio Centro">
+              </div>
+            </div>
+
             <div class="form-group">
-              <label>Dirección Física (Opcional)</label>
-              <input type="text" [(ngModel)]="settings.address" placeholder="Ej: Calle 123 #45-67, Barrio Centro">
+              <label>Términos de Garantía y Devoluciones</label>
+              <textarea [(ngModel)]="settings.guaranteeTerms" rows="3" placeholder="Ej: La garantía es de 30 días por defectos de fábrica..."></textarea>
             </div>
 
             <div class="form-group">
@@ -621,9 +631,6 @@ export class SettingsComponent {
   toggleDelivery() {
     if (!this.settings) return;
     this.settings.hasDelivery = !this.settings.hasDelivery;
-    if (!this.settings.hasDelivery) {
-      this.settings.allowCashOnDelivery = false;
-    }
   }
 
   onChangePassword() {

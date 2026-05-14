@@ -84,4 +84,12 @@ export class UpdateSettingDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsString()
+  @IsOptional()
+  nit?: string;
+
+  @IsString()
+  @IsOptional()
+  guaranteeTerms?: string;
 }

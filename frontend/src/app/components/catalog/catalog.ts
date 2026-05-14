@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, HostListener } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -26,6 +26,14 @@ import { catchError, of, Subscription } from 'rxjs';
   template: `
     <div class="loading-overlay" *ngIf="isLoading">
       <div class="loader"></div>
+    </div>
+
+    <!-- Integrated Notification Banner -->
+    <div class="toast-wrapper" *ngIf="catalogToast.visible">
+      <div class="toast-pill" [class.toast-error]="catalogToast.isError">
+        <i class="fas" [class.fa-check-circle]="!catalogToast.isError" [class.fa-exclamation-circle]="catalogToast.isError"></i>
+        <span>{{ catalogToast.message }}</span>
+      </div>
     </div>
 
     <div class="store-layout" *ngIf="settings" [ngStyle]="combinedStyles" [class.modal-open]="!!selectedProduct || isCartOpen" 
@@ -455,6 +463,13 @@ import { catchError, of, Subscription } from 'rxjs';
             <button class="confirm-btn" (click)="isScheduleModalOpen = false">Entendido</button>
           </footer>
         </div>
+      <!-- Floating Cart FAB (Always visible if items exist) -->
+      <div class="fixed-cart-fab" [class.show]="cartCount > 0" (click)="openCart()">
+        <div class="fab-icon-wrap">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span class="fab-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+        </div>
+        <span class="fab-text">Ver Pedido</span>
       </div>
     </div>
   `,
@@ -525,7 +540,7 @@ import { catchError, of, Subscription } from 'rxjs';
     .nav-left { display: flex; align-items: center; gap: 15px; }
     
     .nav-logo { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-    .mini-logo { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .mini-logo { width: 44px; height: 44px; border-radius: 10px; background: white; padding: 4px; object-fit: contain; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .business-name { font-weight: 950; font-size: 1.3rem; color: #1a1a1a; letter-spacing: -1px; }
 
     .nav-center { display: flex; align-items: center; gap: 35px; }
@@ -1337,7 +1352,7 @@ import { catchError, of, Subscription } from 'rxjs';
     .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
     .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 60px; margin-bottom: 60px; }
     .footer-logo-wrap { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-    .footer-logo { width: 50px !important; height: 50px !important; border-radius: 12px; object-fit: cover; }
+    .footer-logo { width: 50px !important; height: 50px !important; border-radius: 12px; background: white; padding: 4px; object-fit: contain; }
     .footer-business-name { font-size: 1.4rem; font-weight: 950; color: white; letter-spacing: -0.5px; }
     .footer-tagline { color: rgba(255,255,255,0.5); font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; max-width: 300px; }
     
@@ -1395,6 +1410,52 @@ import { catchError, of, Subscription } from 'rxjs';
       background: #f8fafc; color: #64748b; border: 1px dashed #cbd5e1;
       margin-bottom: 15px;
     }
+
+    /* Toasts */
+    .toast-wrapper {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; pointer-events: none;
+    }
+    .toast-pill {
+      background: #0f172a; color: white; padding: 12px 24px; border-radius: 100px;
+      display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 0.9rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast-pill i { color: #22c55e; }
+    .toast-error { background: #ef4444; }
+    .toast-error i { color: white; }
+    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+
+    /* Floating FAB */
+    .fixed-cart-fab {
+      position: fixed; bottom: 30px; right: 30px; z-index: 2000;
+      background: var(--primary-color); color: white;
+      padding: 12px 25px; border-radius: 100px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+      cursor: pointer; transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(150px) scale(0.5); opacity: 0;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .fixed-cart-fab.show { transform: translateY(0) scale(1); opacity: 1; }
+    .fixed-cart-fab:hover { transform: translateY(-5px) scale(1.05); filter: brightness(1.1); box-shadow: 0 20px 45px rgba(0,0,0,0.3); }
+    
+    .fab-icon-wrap { position: relative; display: flex; align-items: center; }
+    .fab-badge {
+      position: absolute; top: -10px; right: -10px; background: white; color: var(--primary-color);
+      font-size: 0.7rem; font-weight: 900; min-width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center; border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .fab-text { font-weight: 800; font-size: 0.95rem; letter-spacing: -0.2px; }
+
+    @media (max-width: 768px) {
+      .fixed-cart-fab { bottom: 20px; right: 20px; padding: 12px; border-radius: 50%; }
+      .fab-text { display: none; }
+      .fab-badge { top: -5px; right: -5px; }
+    }
+    
     `,
   ],
 })
@@ -1420,6 +1481,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   isSearchOpen = false;
   productSearchTerm = '';
   showFullDescription = false;
+  catalogToast = { visible: false, message: '', isError: false };
+  private toastTimer: any;
 
   // Cached computed values (avoids method calls in template)
   combinedStyles: any = {};
@@ -1454,6 +1517,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
     private ngZone: NgZone,
   ) { }
 
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.isScrolled = window.scrollY > 200;
+    this.cdr.markForCheck();
+  }
+
   ngOnInit() {
     this._subs.push(this.route.params.subscribe(params => {
       this.storeSlug = params['slug'];
@@ -1485,7 +1554,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   loadStoreData() {
     this.isLoading = true;
-    
+
     // Usamos forkJoin para esperar a que AMBAS peticiones terminen antes de quitar el cargador
     import('rxjs').then(({ forkJoin }) => {
       forkJoin({
@@ -1506,11 +1575,11 @@ export class CatalogComponent implements OnInit, OnDestroy {
         if (settings) {
           this.settings = settings;
           if (settings.heroSlides?.length) this.heroSlides = settings.heroSlides;
-          
+
           document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
           if (settings.accentColor) document.documentElement.style.setProperty('--accent-color', settings.accentColor);
           if (settings.fontFamily) document.documentElement.style.setProperty('--font-family', settings.fontFamily);
-          
+
           this.combinedStyles = {
             'font-family': settings.fontFamily || "'Inter', sans-serif",
             ...(settings.backgroundColor ? { 'background-color': settings.backgroundColor } : {})
@@ -1534,14 +1603,14 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
     const now = new Date();
     const dayName = now.toLocaleDateString('es-ES', { weekday: 'long' }).toLowerCase();
-    
+
     const daysMap: any = {
       'lunes': 'Lunes', 'martes': 'Martes', 'miércoles': 'Miércoles', 'jueves': 'Jueves',
       'viernes': 'Viernes', 'sábado': 'Sábado', 'domingo': 'Domingo'
     };
 
     const currentDay = this.settings.businessHours.find(d => d.day === daysMap[dayName]);
-    
+
     if (!currentDay || !currentDay.enabled) {
       this.isOpen = false;
       return;
@@ -1549,10 +1618,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
     const [openH, openM] = currentDay.open.split(':').map(Number);
     const [closeH, closeM] = currentDay.close.split(':').map(Number);
-    
+
     const openTime = new Date(now);
     openTime.setHours(openH, openM, 0);
-    
+
     const closeTime = new Date(now);
     closeTime.setHours(closeH, closeM, 0);
 
@@ -1581,12 +1650,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
   applyFilters() {
     this.filteredProducts = this.products.filter((p) => {
       if (p.isActive === false) return false;
-      
+
       const matchesCategory = this.activeCategory === 'Todos' || p.category === this.activeCategory;
-      
+
       const searchLower = this.productSearchTerm.toLowerCase().trim();
-      const matchesSearch = !searchLower || 
-        p.name.toLowerCase().includes(searchLower) || 
+      const matchesSearch = !searchLower ||
+        p.name.toLowerCase().includes(searchLower) ||
         (p.category && p.category.toLowerCase().includes(searchLower)) ||
         (p.description && p.description.toLowerCase().includes(searchLower));
 
@@ -1609,7 +1678,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.showFullDescription = false;
     this.tempOptions = {};
     this._updateModalState();
-    this._pauseSlider(); 
+    this._pauseSlider();
     this.cdr.markForCheck();
   }
 
@@ -1618,7 +1687,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     if (event) {
       this.triggerFlyAnimation(event);
     }
-    // No longer opens cart automatically as per user request
+    this.showToast(`¡${product.name} agregado!`);
     this.justAddedId = product?.id;
     this.cdr.markForCheck(); // OnPush: show highlight immediately
     setTimeout(() => {
@@ -1718,6 +1787,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
       this.cartService.addToCart(this.selectedProduct, cleanOptions);
       if (event) this.triggerFlyAnimation(event);
+      this.showToast(`¡${this.selectedProduct.name} agregado!`);
       this.closeModal();
     }
   }
@@ -1806,11 +1876,11 @@ export class CatalogComponent implements OnInit, OnDestroy {
     const links = this.settings.socialLinks as any;
     let val = links[platform];
     if (!val) return 'javascript:void(0)';
-    
+
     val = val.trim();
     if (val.startsWith('http')) return val;
     if (val.startsWith('www.')) return 'https://' + val;
-    
+
     const domainMap: any = {
       instagram: 'instagram.com',
       facebook: 'facebook.com',
@@ -1821,7 +1891,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     if (val.includes(domainMap[platform])) {
       return 'https://' + val;
     }
-    
+
     switch (platform) {
       case 'instagram': return `https://instagram.com/${val}`;
       case 'facebook': return `https://facebook.com/${val}`;
@@ -1885,6 +1955,16 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  showToast(message: string, isError = false) {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.catalogToast = { visible: true, message, isError };
+    this.toastTimer = setTimeout(() => {
+      this.catalogToast.visible = false;
+      this.cdr.markForCheck();
+    }, 2500);
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy() {

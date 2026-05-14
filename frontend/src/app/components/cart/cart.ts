@@ -121,7 +121,7 @@ import { Subscription } from 'rxjs';
                 <span>Transferencia</span>
               </button>
               <button 
-                *ngIf="settings?.allowCashOnDelivery && deliveryMethod === 'delivery'"
+                *ngIf="settings?.allowCashOnDelivery"
                 class="payment-pill" 
                 [class.active]="paymentMethod === 'contraentrega'"
                 (click)="paymentMethod = 'contraentrega'">
@@ -329,10 +329,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   onDeliveryChange() {
-    // Si cambia a recogida y tenía contraentrega, resetear a efectivo
-    if (this.deliveryMethod === 'pickup' && this.paymentMethod === 'contraentrega') {
-      this.paymentMethod = 'efectivo';
-    }
+    // Ya no reseteamos el método de pago para permitir contraentrega/pago en tienda en ambos casos
   }
 
   ngOnDestroy() {

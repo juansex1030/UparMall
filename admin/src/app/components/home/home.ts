@@ -13,7 +13,7 @@ import { Subscription } from 'rxjs';
     <div class="home-container">
       <div class="glass-panel">
         <div class="brand">
-          <img src="/assets/logo-uparmall.png" alt="UparMall Logo" style="width: 80px; height: 80px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <img src="/assets/logo-uparmall.png" alt="UparMall Logo" style="width: 80px; height: 80px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: white; padding: 8px; object-fit: contain;">
           <h1>UparMall</h1>
           <p>Tu tienda en línea en minutos</p>
         </div>
@@ -186,12 +186,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     try {
       const { error } = await this.authService.updatePassword(this.password);
       if (error) throw error;
-      
+
       this.successMsg = 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.';
       this.password = '';
       this.email = '';
       this.cdr.detectChanges();
-      
+
       // Esperar un momento para que vean el mensaje y luego mandarlos al login limpio
       setTimeout(async () => {
         await this.authService.signOut();

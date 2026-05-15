@@ -12,6 +12,18 @@ export class OrdersService {
   async create(createOrderDto: CreateOrderDto) {
     try {
       const { items, ...orderData } = createOrderDto;
+
+      // 0. Verify store exists and is active before accepting order
+      const { data: store, error: storeError } = await this.supabase.adminClient
+        .from('Stores')
+        .select('id')
+        .eq('id', orderData.storeId)
+        .single();
+      
+      if (storeError || !store) {
+        throw new Error('La tienda no existe o no está disponible.');
+      }
+
       const now = new Date().toISOString();
       
       const payload = {
@@ -38,7 +50,19 @@ export class OrdersService {
         throw new Error(`DB Error (Order Header): ${orderError?.message || 'Check Orders table'}`);
       }
 
-      // 2. Insert Order Items
+      // 2. Verify all products belong to this store
+      const productIds = items.map(i => i.productId);
+      const { data: validProducts, error: productsError } = await this.supabase.adminClient
+        .from('Product')
+        .select('id')
+        .eq('storeId', orderData.storeId)
+        .in('id', productIds);
+
+      if (productsError || !validProducts || validProducts.length !== [...new Set(productIds)].length) {
+        throw new Error('Uno o más productos no pertenecen a esta tienda o no están disponibles.');
+      }
+
+      // 3. Insert Order Items
       const orderId = order.id;
       const itemsPayload = items.map(item => ({
         order_id: orderId,

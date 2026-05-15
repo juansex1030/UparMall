@@ -30,4 +30,24 @@ export class SupabaseService {
       this.adminClient = this.client;
     }
   }
+
+  /**
+   * Crea un cliente autenticado con el JWT del usuario.
+   * Esto permite que las políticas RLS se apliquen correctamente.
+   */
+  getClient(token?: string): SupabaseClient {
+    if (!token) return this.client;
+    
+    return createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    );
+  }
 }

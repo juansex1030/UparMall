@@ -2,19 +2,22 @@ import { Controller, Get, Post, Body, UseGuards, UnauthorizedException, BadReque
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User } from '../auth/user.decorator';
+import { MailService } from '../utils/mail.service';
 
 @Controller('master')
 @UseGuards(SupabaseAuthGuard)
 export class MasterController {
-  private readonly adminEmails = ['juanse1030@gmail.com', 'uparshopelectronics@gmail.com', 'manuel7xs@gmail.com'];
-
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly mailService: MailService
+  ) {}
 
   /**
    * Helper to verify super-admin permissions
    */
   private checkSuperAdmin(user: any) {
-    if (!this.adminEmails.includes(user.email)) {
+    const adminEmails = (process.env['ADMIN_EMAILS'] || 'juanse1030@gmail.com,uparshopelectronics@gmail.com,manuel7xs@gmail.com').split(',');
+    if (!adminEmails.includes(user.email)) {
       throw new UnauthorizedException('No tienes permisos de Super Administrador');
     }
   }
@@ -102,6 +105,10 @@ export class MasterController {
     }
 
     await this.addAuditLog(user.email, 'CREATE_STORE', `Nueva tienda creada para: ${authData.user.email}`);
+    
+    // 2. Enviar correo de bienvenida
+    await this.mailService.sendWelcomeEmail(authData.user.email);
+
     return { 
       message: 'Usuario creado correctamente.', 
       userId: authData.user.id,

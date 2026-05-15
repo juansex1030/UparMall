@@ -87,7 +87,7 @@ export class MasterController {
       throw new BadRequestException('El correo electrónico es obligatorio');
     }
 
-    const password = body.password || 'UparMall2026*';
+    const password = body.password || this.generateRandomPassword();
 
     // 1. Crear el usuario en Auth usando el admin client
     const { data: authData, error: authError } = await this.supabase.adminClient.auth.admin.createUser({
@@ -103,9 +103,10 @@ export class MasterController {
 
     await this.addAuditLog(user.email, 'CREATE_STORE', `Nueva tienda creada para: ${authData.user.email}`);
     return { 
-      message: 'Usuario creado correctamente. La tienda se inicializará al primer acceso.', 
+      message: 'Usuario creado correctamente.', 
       userId: authData.user.id,
-      email: authData.user.email
+      email: authData.user.email,
+      password: password // Devolvemos la clave para que el super-admin se la pase al cliente
     };
   }
 
@@ -117,7 +118,7 @@ export class MasterController {
       throw new BadRequestException('El ID de usuario es obligatorio');
     }
 
-    const password = body.password || 'UparMall2026*';
+    const password = body.password || this.generateRandomPassword();
 
     const { data, error } = await this.supabase.adminClient.auth.admin.updateUserById(
       body.userId,
@@ -132,7 +133,8 @@ export class MasterController {
     await this.addAuditLog(user.email, 'RESET_PASSWORD', `Contraseña restablecida para: ${data.user.email}`);
     return { 
       message: 'Contraseña restablecida correctamente.', 
-      email: data.user.email
+      email: data.user.email,
+      newPassword: password
     };
   }
 
@@ -245,5 +247,14 @@ export class MasterController {
     } catch (e) {
       console.error('Audit Log Error:', e);
     }
+  }
+
+  private generateRandomPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let pass = '';
+    for (let i = 0; i < 12; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pass;
   }
 }

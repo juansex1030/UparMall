@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -57,6 +59,12 @@ async function bootstrap() {
     forbidNonWhitelisted: false,
     transform: true,            
   }));
+
+  // 4. Anti-XSS Sanitization
+  app.useGlobalInterceptors(new SanitizeInterceptor());
+
+  // 5. Secure Error Handling
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   const port = process.env['PORT'] || 3000;
   await app.listen(port);

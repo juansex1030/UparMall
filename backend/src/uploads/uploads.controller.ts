@@ -12,10 +12,16 @@ export class UploadsController {
   @Post()
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for better security
     fileFilter: (req, file, cb) => {
+      // 1. Check extension
       if (!file.originalname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
-        return cb(new BadRequestException('Solo se permiten imágenes (jpg, jpeg, png, gif, svg, webp)'), false);
+        return cb(new BadRequestException('Solo se permiten extensiones de imagen (jpg, jpeg, png, gif, svg, webp)'), false);
+      }
+      // 2. Check actual MIME type to prevent spoofing
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
+      if (!allowedMimes.includes(file.mimetype)) {
+        return cb(new BadRequestException('El contenido del archivo no es una imagen válida'), false);
       }
       cb(null, true);
     },

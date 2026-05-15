@@ -1,3 +1,4 @@
+// UparMall Master Controller - Security Hardened v2.1
 import { Controller, Get, Post, Body, UseGuards, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';

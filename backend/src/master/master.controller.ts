@@ -99,20 +99,23 @@ export class MasterController {
       email_confirm: true
     });
 
-    if (authError) {
+    if (authError || !authData.user || !authData.user.email) {
       console.error('Error creating user:', authError);
-      throw new BadRequestException(authError.message);
+      throw new BadRequestException(authError?.message || 'No se pudo crear el usuario o el email está ausente');
     }
 
-    await this.addAuditLog(user.email, 'CREATE_STORE', `Nueva tienda creada para: ${authData.user.email}`);
+    const newUser = authData.user;
+    const userEmail = newUser.email as string;
+
+    await this.addAuditLog(user.email, 'CREATE_STORE', `Nueva tienda creada para: ${userEmail}`);
     
     // 2. Enviar correo de bienvenida
-    await this.mailService.sendWelcomeEmail(authData.user.email);
+    await this.mailService.sendWelcomeEmail(userEmail);
 
     return { 
       message: 'Usuario creado correctamente.', 
-      userId: authData.user.id,
-      email: authData.user.email,
+      userId: newUser.id,
+      email: userEmail,
       password: password // Devolvemos la clave para que el super-admin se la pase al cliente
     };
   }
@@ -132,15 +135,18 @@ export class MasterController {
       { password: password }
     );
 
-    if (error) {
+    if (error || !data.user || !data.user.email) {
       console.error('Error resetting password:', error);
-      throw new BadRequestException(error.message);
+      throw new BadRequestException(error?.message || 'No se pudo restablecer la contraseña');
     }
 
-    await this.addAuditLog(user.email, 'RESET_PASSWORD', `Contraseña restablecida para: ${data.user.email}`);
+    const updatedUser = data.user;
+    const updatedEmail = updatedUser.email as string;
+
+    await this.addAuditLog(user.email, 'RESET_PASSWORD', `Contraseña restablecida para: ${updatedEmail}`);
     return { 
       message: 'Contraseña restablecida correctamente.', 
-      email: data.user.email,
+      email: updatedEmail,
       newPassword: password
     };
   }

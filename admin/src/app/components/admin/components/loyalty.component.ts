@@ -1,6 +1,14 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Order } from '../../../shared/models/models';
+
+interface LoyaltyCustomer {
+  name: string;
+  phone: string;
+  count: number;
+  total: number;
+  promoLink: string;
+}
 
 @Component({
   selector: 'app-loyalty',
@@ -38,7 +46,7 @@ import { Order } from '../../../shared/models/models';
             </div>
           </div>
           <div class="card-footer">
-            <a [href]="getPromoLink(customer)" target="_blank" class="btn-promo">
+            <a [href]="customer.promoLink" target="_blank" class="btn-promo">
               <i class="fab fa-whatsapp"></i> Ofrecer Promoción
             </a>
           </div>
@@ -98,32 +106,49 @@ import { Order } from '../../../shared/models/models';
     .empty-state h4 { margin: 0; color: #0f172a; font-weight: 900; }
   `]
 })
-export class LoyaltyComponent {
+export class LoyaltyComponent implements OnChanges {
   @Input() orders: Order[] = [];
+  
+  topCustomers: LoyaltyCustomer[] = [];
 
-  get topCustomers() {
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['orders']) {
+      this.calculateTopCustomers();
+    }
+  }
+
+  private calculateTopCustomers() {
     const map = new Map<string, { name: string, phone: string, count: number, total: number }>();
     
-    // Filtrar pedidos para no contar cancelados si se desea, pero usualmente fidelidad es quien compra
-    this.orders.filter(o => o.status !== 'cancelado').forEach(o => {
+    const validOrders = this.orders || [];
+    validOrders.filter(o => o.status !== 'cancelado').forEach(o => {
       const key = o.customer_phone;
+      if (!key) return;
+
       if (!map.has(key)) {
-        map.set(key, { name: o.customer_name, phone: o.customer_phone, count: 0, total: 0 });
+        map.set(key, { 
+          name: o.customer_name || 'Cliente sin nombre', 
+          phone: key, 
+          count: 0, 
+          total: 0 
+        });
       }
       const data = map.get(key)!;
       data.count++;
-      data.total += o.total;
+      data.total += o.total || 0;
     });
 
-    return Array.from(map.values())
+    this.topCustomers = Array.from(map.values())
       .filter(c => c.count > 0)
       .sort((a, b) => b.count - a.count)
-      .slice(0, 50);
-  }
-
-  getPromoLink(customer: any): string {
-    const cleanPhone = customer.phone.replace(/\D/g, '');
-    const msg = encodeURIComponent(`¡Hola ${customer.name}! Gracias por ser uno de nuestros clientes más fieles en nuestra tienda de UparMall. Queremos regalarte un cupón de descuento especial por tu próxima compra. 🎁`);
-    return `https://wa.me/${cleanPhone}?text=${msg}`;
+      .slice(0, 50)
+      .map(c => {
+        const cleanPhone = c.phone.replace(/\D/g, '');
+        const msg = encodeURIComponent(`¡Hola ${c.name}! Gracias por ser uno de nuestros clientes más fieles en nuestra tienda de UparMall. Queremos regalarte un cupón de descuento especial por tu próxima compra. 🎁`);
+        return {
+          ...c,
+          promoLink: `https://wa.me/${cleanPhone}?text=${msg}`
+        };
+      });
   }
 }

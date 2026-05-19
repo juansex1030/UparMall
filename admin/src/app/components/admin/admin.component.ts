@@ -98,7 +98,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     localStorage.setItem('admin_active_tab', tab);
     
     // Acciones adicionales por pestaña
-    if (tab === 'orders') this.loadOrders();
+    if (tab === 'orders' || tab === 'analytics') this.loadOrders();
     if (tab === 'master') this.loadMasterData();
     if (tab === 'products' || tab === 'analytics') this.showForm = false;
   }

@@ -11,10 +11,12 @@ async function bootstrap() {
   const isProduction = process.env['NODE_ENV'] === 'production';
 
   // 1. Security Headers (Helmet)
-  app.use(helmet({
-    crossOriginResourcePolicy: isProduction,
-    contentSecurityPolicy: isProduction,
-  }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: isProduction,
+      contentSecurityPolicy: isProduction,
+    }),
+  );
 
   // 2. Restricted CORS
   const adminUrl = process.env['ADMIN_URL'] || 'https://admin.uparmall.com';
@@ -23,15 +25,22 @@ async function bootstrap() {
     adminUrl,
     storeUrl,
     'https://www.admin.uparmall.com',
-    'https://www.uparmall.com'
+    'https://www.uparmall.com',
   ];
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // En producción solo permitimos los dominios oficiales.
       // En desarrollo permitimos localhost y 127.0.0.1
       if (!isProduction) {
-        if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        if (
+          !origin ||
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1')
+        ) {
           return callback(null, true);
         }
       }
@@ -48,11 +57,13 @@ async function bootstrap() {
   });
 
   // 3. Global Validation
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: false,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  );
 
   // 4. Anti-XSS Sanitization
   app.useGlobalInterceptors(new SanitizeInterceptor());
@@ -65,4 +76,4 @@ async function bootstrap() {
   const mode = isProduction ? '🚀 PRODUCCIÓN' : '🛠️ DESARROLLO';
   console.log(`Backend corriendo en modo: ${mode} en el puerto: ${port}`);
 }
-bootstrap();
+bootstrap().catch(console.error);

@@ -1,30 +1,45 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // UparMall Master Controller - Security Hardened v2.1
-import { Controller, Get, Post, Body, UseGuards, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User } from '../auth/user.decorator';
 import { MailService } from '../utils/mail.service';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 @Controller('master')
 @UseGuards(SupabaseAuthGuard)
 export class MasterController {
   constructor(
     private readonly supabase: SupabaseService,
-    private readonly mailService: MailService
+    private readonly mailService: MailService,
   ) {}
 
   /**
    * Helper to verify super-admin permissions
    */
-  private checkSuperAdmin(user: any) {
-    const adminEmails = (process.env['ADMIN_EMAILS'] || 'juanse1030@gmail.com,uparshopelectronics@gmail.com,manuel7xs@gmail.com').split(',');
-    if (!adminEmails.includes(user.email)) {
-      throw new UnauthorizedException('No tienes permisos de Super Administrador');
+  private checkSuperAdmin(user: SupabaseUser) {
+    const adminEmails = (
+      process.env['ADMIN_EMAILS'] ||
+      'juanse1030@gmail.com,uparshopelectronics@gmail.com,manuel7xs@gmail.com'
+    ).split(',');
+    if (!user.email || !adminEmails.includes(user.email)) {
+      throw new UnauthorizedException(
+        'No tienes permisos de Super Administrador',
+      );
     }
   }
 
   @Get('stores')
-  async getAllStores(@User() user: any) {
+  async getAllStores(@User() user: SupabaseUser): Promise<unknown[]> {
     this.checkSuperAdmin(user);
 
     const { data: stores, error: storesError } = await this.supabase.adminClient
@@ -34,21 +49,25 @@ export class MasterController {
 
     if (storesError) throw storesError;
 
-    const { data: { users }, error: authError } = await this.supabase.adminClient.auth.admin.listUsers();
-    
+    const {
+      data: { users },
+      error: authError,
+    } = await this.supabase.adminClient.auth.admin.listUsers();
+
     if (authError) {
       console.error('Master Error (Auth List):', authError);
-      return stores;
+      return (stores as unknown[]) || [];
     }
 
-    return stores.map(store => ({
+    const typedUsers = users as { id: string; email?: string }[];
+    return (stores || []).map((store: Record<string, unknown>) => ({
       ...store,
-      ownerEmail: (users as any[]).find(u => u.id === store.id)?.email || 'N/A'
+      ownerEmail: typedUsers.find((u) => u.id === store['id'])?.email || 'N/A',
     }));
   }
 
   @Get('orders')
-  async getAllOrders(@User() user: any) {
+  async getAllOrders(@User() user: SupabaseUser): Promise<unknown[]> {
     this.checkSuperAdmin(user);
 
     // Using 'Orders' as the primary table with the correct relation and field names
@@ -62,12 +81,12 @@ export class MasterController {
       console.error('Master Orders Error:', error);
       return [];
     }
-    
-    return data || [];
+
+    return (data as unknown[]) || [];
   }
 
   @Get('leads')
-  async getAllLeads(@User() user: any) {
+  async getAllLeads(@User() user: SupabaseUser): Promise<unknown[]> {
     this.checkSuperAdmin(user);
 
     const { data, error } = await this.supabase.adminClient
@@ -80,11 +99,14 @@ export class MasterController {
       return [];
     }
 
-    return data || [];
+    return (data as unknown[]) || [];
   }
 
   @Post('create-store')
-  async createStore(@User() user: any, @Body() body: { email: string; password?: string }) {
+  async createStore(
+    @User() user: SupabaseUser,
+    @Body() body: { email: string; password?: string },
+  ) {
     this.checkSuperAdmin(user);
 
     if (!body.email) {
@@ -94,35 +116,46 @@ export class MasterController {
     const password = body.password || this.generateRandomPassword();
 
     // 1. Crear el usuario en Auth usando el admin client
-    const { data: authData, error: authError } = await this.supabase.adminClient.auth.admin.createUser({
-      email: body.email,
-      password: password,
-      email_confirm: true
-    });
+    const { data: authData, error: authError } =
+      await this.supabase.adminClient.auth.admin.createUser({
+        email: body.email,
+        password: password,
+        email_confirm: true,
+      });
 
     if (authError || !authData.user || !authData.user.email) {
       console.error('Error creating user:', authError);
-      throw new BadRequestException(authError?.message || 'No se pudo crear el usuario o el email está ausente');
+      throw new BadRequestException(
+        authError?.message ||
+          'No se pudo crear el usuario o el email está ausente',
+      );
     }
 
     const newUser = authData.user;
     const userEmail = newUser.email as string;
 
-    await this.addAuditLog(user.email, 'CREATE_STORE', `Nueva tienda creada para: ${userEmail}`);
-    
+    await this.addAuditLog(
+      user.email || 'unknown',
+      'CREATE_STORE',
+      `Nueva tienda creada para: ${userEmail}`,
+    );
+
     // 2. Enviar correo de bienvenida
     await this.mailService.sendWelcomeEmail(userEmail);
 
-    return { 
-      message: 'Usuario creado correctamente.', 
+    return {
+      message: 'Usuario creado correctamente.',
       userId: newUser.id,
       email: userEmail,
-      password: password // Devolvemos la clave para que el super-admin se la pase al cliente
+      password: password, // Devolvemos la clave para que el super-admin se la pase al cliente
     };
   }
 
   @Post('reset-password')
-  async resetPassword(@User() user: any, @Body() body: { userId: string; password?: string }) {
+  async resetPassword(
+    @User() user: SupabaseUser,
+    @Body() body: { userId: string; password?: string },
+  ) {
     this.checkSuperAdmin(user);
 
     if (!body.userId) {
@@ -131,29 +164,35 @@ export class MasterController {
 
     const password = body.password || this.generateRandomPassword();
 
-    const { data, error } = await this.supabase.adminClient.auth.admin.updateUserById(
-      body.userId,
-      { password: password }
-    );
+    const { data, error } =
+      await this.supabase.adminClient.auth.admin.updateUserById(body.userId, {
+        password: password,
+      });
 
     if (error || !data.user || !data.user.email) {
       console.error('Error resetting password:', error);
-      throw new BadRequestException(error?.message || 'No se pudo restablecer la contraseña');
+      throw new BadRequestException(
+        error?.message || 'No se pudo restablecer la contraseña',
+      );
     }
 
     const updatedUser = data.user;
     const updatedEmail = updatedUser.email as string;
 
-    await this.addAuditLog(user.email, 'RESET_PASSWORD', `Contraseña restablecida para: ${updatedEmail}`);
-    return { 
-      message: 'Contraseña restablecida correctamente.', 
+    await this.addAuditLog(
+      user.email || 'unknown',
+      'RESET_PASSWORD',
+      `Contraseña restablecida para: ${updatedEmail}`,
+    );
+    return {
+      message: 'Contraseña restablecida correctamente.',
       email: updatedEmail,
-      newPassword: password
+      newPassword: password,
     };
   }
 
   @Post('delete-lead')
-  async deleteLead(@User() user: any, @Body() body: { id: string }) {
+  async deleteLead(@User() user: SupabaseUser, @Body() body: { id: string }) {
     this.checkSuperAdmin(user);
 
     if (!body.id) {
@@ -170,12 +209,16 @@ export class MasterController {
       throw error;
     }
 
-    await this.addAuditLog(user.email, 'DELETE_LEAD', `Solicitud ID: ${body.id} eliminada`);
+    await this.addAuditLog(
+      user.email || 'unknown',
+      'DELETE_LEAD',
+      `Solicitud ID: ${body.id} eliminada`,
+    );
     return { success: true };
   }
 
   @Post('delete-store')
-  async deleteStore(@User() user: any, @Body() body: { id: string }) {
+  async deleteStore(@User() user: SupabaseUser, @Body() body: { id: string }) {
     this.checkSuperAdmin(user);
 
     if (!body.id) {
@@ -192,12 +235,16 @@ export class MasterController {
       throw error;
     }
 
-    await this.addAuditLog(user.email, 'DELETE_STORE', `Tienda ID: ${body.id} eliminada`);
+    await this.addAuditLog(
+      user.email || 'unknown',
+      'DELETE_STORE',
+      `Tienda ID: ${body.id} eliminada`,
+    );
     return { success: true };
   }
 
   @Get('platform-settings')
-  async getPlatformSettings(@User() user: any) {
+  async getPlatformSettings(@User() user: SupabaseUser): Promise<unknown> {
     this.checkSuperAdmin(user);
     const { data, error } = await this.supabase.adminClient
       .from('PlatformSettings')
@@ -210,7 +257,15 @@ export class MasterController {
   }
 
   @Post('platform-settings')
-  async updatePlatformSettings(@User() user: any, @Body() body: any) {
+  async updatePlatformSettings(
+    @User() user: SupabaseUser,
+    @Body()
+    body: {
+      maintenance_mode: boolean;
+      announcement_text: string;
+      announcement_active: boolean;
+    },
+  ) {
     this.checkSuperAdmin(user);
     const { error } = await this.supabase.adminClient
       .from('PlatformSettings')
@@ -218,17 +273,24 @@ export class MasterController {
         maintenance_mode: body.maintenance_mode,
         announcement_text: body.announcement_text,
         announcement_active: body.announcement_active,
-        updated_at: new Date()
+        updated_at: new Date(),
       })
       .eq('id', 1);
 
     if (error) throw new BadRequestException(error.message);
-    await this.addAuditLog(user.email, 'UPDATE_SETTINGS', 'Configuración global actualizada');
+    await this.addAuditLog(
+      user.email || 'unknown',
+      'UPDATE_SETTINGS',
+      'Configuración global actualizada',
+    );
     return { success: true };
   }
 
   @Post('toggle-featured')
-  async toggleFeatured(@User() user: any, @Body() body: { id: string, is_featured: boolean }) {
+  async toggleFeatured(
+    @User() user: SupabaseUser,
+    @Body() body: { id: string; is_featured: boolean },
+  ) {
     this.checkSuperAdmin(user);
     const { error } = await this.supabase.adminClient
       .from('Stores')
@@ -236,12 +298,16 @@ export class MasterController {
       .eq('id', body.id);
 
     if (error) throw new BadRequestException(error.message);
-    await this.addAuditLog(user.email, 'TOGGLE_FEATURED', `Tienda ${body.id} destacada: ${body.is_featured}`);
+    await this.addAuditLog(
+      user.email || 'unknown',
+      'TOGGLE_FEATURED',
+      `Tienda ${body.id} destacada: ${body.is_featured}`,
+    );
     return { success: true };
   }
 
   @Get('audit-logs')
-  async getAuditLogs(@User() user: any) {
+  async getAuditLogs(@User() user: SupabaseUser): Promise<unknown[]> {
     this.checkSuperAdmin(user);
     const { data, error } = await this.supabase.adminClient
       .from('AuditLogs')
@@ -250,7 +316,7 @@ export class MasterController {
       .limit(50);
 
     if (error) throw new BadRequestException(error.message);
-    return data;
+    return (data as unknown[]) || [];
   }
 
   private async addAuditLog(email: string, action: string, details: string) {
@@ -264,7 +330,8 @@ export class MasterController {
   }
 
   private generateRandomPassword(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let pass = '';
     for (let i = 0; i < 12; i++) {
       pass += chars.charAt(Math.floor(Math.random() * chars.length));

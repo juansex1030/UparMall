@@ -6,11 +6,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 
+import { Response } from 'express';
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
+    const response = ctx.getResponse<Response>();
     const isProduction = process.env['NODE_ENV'] === 'production';
 
     const status =
@@ -29,7 +31,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return response.status(status).json({
         statusCode: status,
         message: 'Lo sentimos, algo salió mal. Por favor intenta más tarde.',
-        error: 'Internal Server Error'
+        error: 'Internal Server Error',
       });
     }
 

@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsArray, IsObject, IsNumber, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsObject,
+  IsNumber,
+  IsBoolean,
+} from 'class-validator';
 
 export class UpdateSettingDto {
   @IsString()

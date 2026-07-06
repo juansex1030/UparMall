@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -14,24 +15,32 @@ export class PublicController {
 
     if (error) throw error;
 
-    return data.map(item => ({
+    return data.map((item) => ({
       name: item.businessName,
       logo: item.logoUrl,
-      slug: (item.Stores as any)?.slug
+      slug: (item.Stores as { slug?: string } | null)?.slug,
     }));
   }
 
   @Post('contact')
-  async submitContact(@Body() lead: any) {
+  async submitContact(
+    @Body()
+    lead: {
+      name: string;
+      email: string;
+      phone: string;
+      message: string;
+    },
+  ) {
     // Guardar el prospecto en la base de datos
-    const { error } = await this.supabase.adminClient
-      .from('Leads')
-      .insert([{
+    const { error } = await this.supabase.adminClient.from('Leads').insert([
+      {
         name: lead.name,
         email: lead.email,
         phone: lead.phone,
-        message: lead.message
-      }]);
+        message: lead.message,
+      },
+    ]);
 
     if (error) {
       console.error('Error saving lead:', error);

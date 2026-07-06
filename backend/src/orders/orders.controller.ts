@@ -1,8 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/create-order.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User } from '../auth/user.decorator';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 @Controller('orders')
 export class OrdersController {
@@ -15,19 +25,19 @@ export class OrdersController {
 
   @UseGuards(SupabaseAuthGuard)
   @Get('stats')
-  getStats(@User() user: any) {
+  getStats(@User() user: SupabaseUser) {
     return this.ordersService.getStats(user.id);
   }
 
   @UseGuards(SupabaseAuthGuard)
   @Get()
-  findAll(@User() user: any) {
+  findAll(@User() user: SupabaseUser) {
     return this.ordersService.findAllByStoreId(user.id);
   }
 
   @UseGuards(SupabaseAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string, @User() user: any) {
+  findOne(@Param('id') id: string, @User() user: SupabaseUser) {
     return this.ordersService.findOne(id, user.id);
   }
 
@@ -36,14 +46,18 @@ export class OrdersController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateOrderStatusDto: UpdateOrderStatusDto,
-    @User() user: any,
+    @User() user: SupabaseUser,
   ) {
-    return this.ordersService.updateStatus(id, updateOrderStatusDto.status, user.id);
+    return this.ordersService.updateStatus(
+      id,
+      updateOrderStatusDto.status,
+      user.id,
+    );
   }
 
   @UseGuards(SupabaseAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @User() user: any) {
+  remove(@Param('id') id: string, @User() user: SupabaseUser) {
     return this.ordersService.remove(id, user.id);
   }
 }

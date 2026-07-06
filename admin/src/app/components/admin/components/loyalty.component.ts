@@ -143,7 +143,8 @@ export class LoyaltyComponent implements OnChanges {
       .sort((a, b) => b.count - a.count)
       .slice(0, 50)
       .map(c => {
-        const cleanPhone = c.phone.replace(/\D/g, '');
+        let cleanPhone = c.phone.replace(/\D/g, '');
+        if (cleanPhone.length === 10) cleanPhone = '57' + cleanPhone;
         const msg = encodeURIComponent(`¡Hola ${c.name}! Gracias por ser uno de nuestros clientes más fieles en nuestra tienda de UparMall. Queremos regalarte un cupón de descuento especial por tu próxima compra. 🎁`);
         return {
           ...c,

@@ -5,13 +5,13 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Request } from 'express';
 
 @Injectable()
 export class SanitizeInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<Request>();
+
     if (request.body) {
       this.sanitizeObject(request.body);
     }
@@ -19,13 +19,19 @@ export class SanitizeInterceptor implements NestInterceptor {
     return next.handle();
   }
 
-  private sanitizeObject(obj: any) {
-    for (const key in obj) {
-      if (typeof obj[key] === 'string') {
+  private sanitizeObject(obj: unknown) {
+    if (typeof obj !== 'object' || obj === null) return;
+
+    const objectRecord = obj as Record<string, unknown>;
+    for (const key in objectRecord) {
+      if (typeof objectRecord[key] === 'string') {
         // Basic XSS protection: strip HTML tags
-        obj[key] = obj[key].replace(/<[^>]*>?/gm, '').trim();
-      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-        this.sanitizeObject(obj[key]);
+        objectRecord[key] = objectRecord[key].replace(/<[^>]*>?/gm, '').trim();
+      } else if (
+        typeof objectRecord[key] === 'object' &&
+        objectRecord[key] !== null
+      ) {
+        this.sanitizeObject(objectRecord[key]);
       }
     }
   }

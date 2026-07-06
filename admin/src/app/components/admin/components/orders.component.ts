@@ -215,7 +215,11 @@ export class OrdersComponent {
   }
 
   cleanPhone(phone: string): string {
-    return (phone || '').replace(/\D/g, '');
+    let clean = (phone || '').replace(/\D/g, '');
+    if (clean.length === 10) {
+      clean = '57' + clean;
+    }
+    return clean;
   }
 
   exportToExcel() {

@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { Observable, from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { SupabaseService } from '../../supabase/supabase.service';
@@ -14,8 +15,8 @@ import { SupabaseService } from '../../supabase/supabase.service';
 export class MaintenanceInterceptor implements NestInterceptor {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<Request>();
     const url = request.url;
 
     // Excluir endpoints maestros para poder desactivar el mantenimiento
@@ -38,13 +39,13 @@ export class MaintenanceInterceptor implements NestInterceptor {
 
   private async checkMaintenance(): Promise<boolean> {
     try {
-      const { data } = await this.supabaseService.adminClient
+      const { data } = (await this.supabaseService.adminClient
         .from('PlatformSettings')
         .select('maintenance_mode')
         .eq('id', 1)
-        .single();
+        .single()) as { data: { maintenance_mode?: boolean } | null };
       return data?.maintenance_mode || false;
-    } catch (e) {
+    } catch {
       return false;
     }
   }

@@ -29,10 +29,12 @@ import { MaintenanceInterceptor } from './common/interceptors/maintenance.interc
     MailModule,
     OrdersModule,
     MasterModule,
-    ThrottlerModule.forRoot([{
-      ttl: 60000, 
-      limit: process.env['NODE_ENV'] === 'production' ? 100 : 1000, 
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: process.env['NODE_ENV'] === 'production' ? 100 : 1000,
+      },
+    ]),
   ],
   controllers: [AppController],
   providers: [
@@ -44,7 +46,7 @@ import { MaintenanceInterceptor } from './common/interceptors/maintenance.interc
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
-    }
+    },
   ],
 })
 export class AppModule {}

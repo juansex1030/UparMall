@@ -1945,8 +1945,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   contactWhatsApp() {
     if (!this.settings?.whatsappNumber) return;
+    let phone = this.settings.whatsappNumber.replace(/\D/g, '');
+    if (phone.length === 10 && phone.startsWith('3')) {
+      phone = '57' + phone;
+    }
     const msg = encodeURIComponent('¡Hola! Necesito soporte o tengo una duda sobre la tienda.');
-    window.open(`https://wa.me/${this.settings.whatsappNumber}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   }
 
   scrollToProducts() {

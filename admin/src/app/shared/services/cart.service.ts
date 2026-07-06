@@ -203,6 +203,9 @@ export class CartService {
     const message = lines.join(NL);
 
     let phone = settings.whatsappNumber.replace(/\D/g, '');
+    if (phone.length === 10 && phone.startsWith('3')) {
+      phone = '57' + phone;
+    }
     return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
   }
 }

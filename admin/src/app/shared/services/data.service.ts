@@ -10,7 +10,7 @@ import { Product, Settings } from '../models/models';
 export class DataService {
   private apiUrl = environment.apiUrl;
 
-  constructor(@Inject(HttpClient) private http: HttpClient) {}
+  constructor(@Inject(HttpClient) private http: HttpClient) { }
 
   // Products
   getProductsBySlug(slug: string): Observable<Product[]> {
@@ -18,7 +18,7 @@ export class DataService {
   }
 
   getMyProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.apiUrl}/products/my-products`).pipe(timeout(15000));
+    return this.http.get<Product[]>(`${this.apiUrl}/products/my-products`).pipe(timeout(10000));
   }
 
   getProduct(id: number): Observable<Product> {
@@ -43,7 +43,7 @@ export class DataService {
   }
 
   getMySettings(): Observable<Settings> {
-    return this.http.get<Settings>(`${this.apiUrl}/settings`).pipe(timeout(15000));
+    return this.http.get<Settings>(`${this.apiUrl}/settings`).pipe(timeout(10000));
   }
 
   updateSettings(settings: Partial<Settings>): Observable<Settings> {

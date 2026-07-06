@@ -7,7 +7,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   const isProduction = process.env['NODE_ENV'] === 'production';
 
   // 1. Security Headers (Helmet)
@@ -20,31 +20,25 @@ async function bootstrap() {
   const adminUrl = process.env['ADMIN_URL'] || 'https://admin.uparmall.com';
   const storeUrl = process.env['STORE_URL'] || 'https://uparmall.com';
   const allowedOrigins = [
-    adminUrl, 
+    adminUrl,
     storeUrl,
     'https://www.admin.uparmall.com',
-    'https://www.uparmall.com',
-    'https://upar-mall.vercel.app',
-    'https://admin-upar.pages.dev'
+    'https://www.uparmall.com'
   ];
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!isProduction || !origin) {
-        return callback(null, true);
+      // En producción solo permitimos los dominios oficiales.
+      // En desarrollo permitimos localhost y 127.0.0.1
+      if (!isProduction) {
+        if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+          return callback(null, true);
+        }
       }
 
-      // Normalizar origin: quitar barra al final para evitar errores en móviles
-      const cleanOrigin = origin.replace(/\/$/, '');
-
-      if (
-        allowedOrigins.includes(cleanOrigin) || 
-        cleanOrigin.includes('uparmall.com') ||
-        cleanOrigin.includes('vercel.app')
-      ) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        console.error(`Bloqueado por CORS: ${origin}`);
         callback(new Error('Acceso no permitido por política CORS'));
       }
     },
@@ -52,12 +46,12 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
-  
+
   // 3. Global Validation
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,           
+    whitelist: true,
     forbidNonWhitelisted: false,
-    transform: true,            
+    transform: true,
   }));
 
   // 4. Anti-XSS Sanitization

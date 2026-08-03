@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
@@ -74,6 +75,7 @@ async function bootstrap() {
   const port = process.env['PORT'] || 3000;
   await app.listen(port);
   const mode = isProduction ? '🚀 PRODUCCIÓN' : '🛠️ DESARROLLO';
-  console.log(`Backend corriendo en modo: ${mode} en el puerto: ${port}`);
+  const logger = new Logger('Bootstrap');
+  logger.log(`Backend corriendo en modo: ${mode} en el puerto: ${port}`);
 }
 bootstrap().catch(console.error);

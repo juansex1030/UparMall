@@ -21,6 +21,8 @@ export class ProductsService {
       manageStock: createProductDto.manageStock ?? false,
       stock: createProductDto.stock ?? 0,
       lowStockThreshold: createProductDto.lowStockThreshold ?? 5,
+      isCombo: createProductDto.isCombo ?? false,
+      comboItems: createProductDto.comboItems ?? [],
       createdAt: now,
       updatedAt: now,
     };
@@ -118,6 +120,10 @@ export class ProductsService {
       payload['stock'] = updateProductDto.stock;
     if (updateProductDto.lowStockThreshold !== undefined)
       payload['lowStockThreshold'] = updateProductDto.lowStockThreshold;
+    if (updateProductDto.isCombo !== undefined)
+      payload['isCombo'] = updateProductDto.isCombo;
+    if (updateProductDto.comboItems !== undefined)
+      payload['comboItems'] = updateProductDto.comboItems;
 
     const { data, error } = await this.supabase.adminClient
       .from('Product')

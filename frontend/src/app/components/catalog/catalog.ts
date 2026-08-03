@@ -55,7 +55,7 @@ import { catchError, of, Subscription } from 'rxjs';
                    alt="Logo" class="mini-logo">
               <div class="logo-text-group">
                 <span class="business-name">{{ settings.businessName }}</span>
-                <div class="store-status-pill" [class.status-open]="isOpen" (click)="isScheduleModalOpen = true; $event.stopPropagation()">
+                <div class="store-status-pill" role="button" tabindex="0" [class.status-open]="isOpen" (click)="isScheduleModalOpen = true; $event.stopPropagation()" (keydown.enter)="isScheduleModalOpen = true; $event.stopPropagation()" (keydown.space)="isScheduleModalOpen = true; $event.stopPropagation(); $event.preventDefault()">
                   <span class="status-dot"></span>
                   {{ isOpen ? 'Abierto ahora' : 'Cerrado' }}
                   <svg lucideClock size="10" style="margin-left: 4px;"></svg>
@@ -136,7 +136,7 @@ import { catchError, of, Subscription } from 'rxjs';
       <section class="hero-slider" *ngIf="settings">
         <div class="slides-container" [style.transform]="'translateX(-' + (currentSlide * 100) + '%)'">
           <div class="slide" *ngFor="let slide of heroSlides">
-            <img [src]="slide.url" [alt]="slide.title" class="slide-img">
+            <img [src]="slide.url" [alt]="slide.title" class="slide-img" (error)="$event.target.src = '/assets/logo-uparmall.png'">
             <div class="slide-overlay">
               <div class="slide-content">
                 <h2 class="hero-title animate-in">{{ settings.businessName }}</h2>
@@ -189,7 +189,7 @@ import { catchError, of, Subscription } from 'rxjs';
         <div class="container">
           <div class="products-grid">
             <div class="glass-card" *ngFor="let product of filteredProducts" [class.just-added]="justAddedId === product.id">
-              <div class="card-image-wrapper" (click)="openProductDetails(product)">
+              <div class="card-image-wrapper" role="button" tabindex="0" (click)="openProductDetails(product)" (keydown.enter)="openProductDetails(product)" (keydown.space)="openProductDetails(product); $event.preventDefault()">
                 <img [src]="product.imageUrl || '/assets/logo-uparmall.png'" 
                      (error)="$event.target.src = '/assets/logo-uparmall.png'"
                      [alt]="product.name" 
@@ -301,13 +301,13 @@ import { catchError, of, Subscription } from 'rxjs';
         <div class="modal-content glass" (click)="$event.stopPropagation()">
           <header class="modal-header">
             <h3>Personalizar {{ selectedProduct.name }}</h3>
-            <button class="close-btn" (click)="closeModal()"><svg lucideX size="24"></svg></button>
+            <button class="close-btn" (click)="closeModal()" aria-label="Cerrar modal"><svg lucideX size="24"></svg></button>
           </header>
 
           <div class="modal-body">
             <div class="product-main-info">
               <div class="modal-preview-image" *ngIf="selectedProduct && selectedProduct.imageUrl">
-                <img [src]="displayImage" class="main-preview" />
+                <img [src]="displayImage" class="main-preview" (error)="$event.target.src = '/assets/logo-uparmall.png'" alt="Imagen principal" />
               </div>
 
               <!-- VARIANTS (Moved Up) -->
@@ -338,15 +338,46 @@ import { catchError, of, Subscription } from 'rxjs';
               </div>
             </div>
 
+            <!-- COMBO ITEMS -->
+            <div class="combo-section" *ngIf="selectedProduct.isCombo && selectedProduct.comboItems?.length">
+              <h4>Este combo incluye:</h4>
+              <div class="combo-items-list" style="display: flex; flex-direction: column; gap: 15px;">
+                <ng-container *ngFor="let item of selectedProduct.comboItems">
+                  <div class="combo-item-card" *ngIf="getComboProduct(item.productId) as cp" style="background: rgba(255,255,255,0.5); border-radius: 12px; padding: 15px; border: 1px solid rgba(0,0,0,0.05);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                      <span class="combo-qty" style="background: var(--primary-color, #0f172a); color: white; padding: 4px 8px; border-radius: 8px; font-weight: 900; font-size: 0.8rem;">{{ item.quantity }}x</span>
+                      <span class="combo-name" style="font-weight: 800; font-size: 1rem; color: #1e293b;">{{ cp.name }}</span>
+                    </div>
+                    
+                    <div *ngIf="cp.description" style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px; line-height: 1.4;">
+                      {{ cp.description }}
+                    </div>
+                    
+                    <details *ngIf="cp.specifications?.length" class="combo-specs-details">
+                      <summary>Ver especificaciones</summary>
+                      <div class="specs-table glass" style="margin-top: 10px; margin-bottom: 0;">
+                        <div class="spec-item" *ngFor="let spec of cp.specifications" style="padding: 6px 10px;">
+                          <span class="spec-key" style="font-size: 0.75rem;">{{ spec.key }}</span>
+                          <span class="spec-value" style="font-size: 0.75rem;">{{ spec.value }}</span>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+
             <!-- SPECIFICATIONS (Priority) -->
             <div class="specs-section" *ngIf="selectedProduct.specifications?.length; else descriptionBlock">
-              <h4>Especificaciones Técnicas</h4>
-              <div class="specs-table glass">
-                <div class="spec-item" *ngFor="let spec of selectedProduct.specifications">
-                  <span class="spec-key">{{ spec.key }}</span>
-                  <span class="spec-value">{{ spec.value }}</span>
+              <details class="product-specs-details" open>
+                <summary><h4>Especificaciones Técnicas</h4></summary>
+                <div class="specs-table glass" style="margin-top: 15px;">
+                  <div class="spec-item" *ngFor="let spec of selectedProduct.specifications">
+                    <span class="spec-key">{{ spec.key }}</span>
+                    <span class="spec-value">{{ spec.value }}</span>
+                  </div>
                 </div>
-              </div>
+              </details>
             </div>
 
             <!-- DESCRIPTION (Only if no specs) -->
@@ -589,6 +620,7 @@ import { catchError, of, Subscription } from 'rxjs';
       outline: none;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       font-weight: 600;
+      overflow: hidden;
       font-size: 0.9rem;
       background: white;
     }
@@ -791,7 +823,7 @@ import { catchError, of, Subscription } from 'rxjs';
       border-radius: 100px;
       font-weight: 900; 
       cursor: pointer; 
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease; 
       border: none;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -801,8 +833,11 @@ import { catchError, of, Subscription } from 'rxjs';
     }
     .shop-now-btn:hover { 
       filter: brightness(0.9);
-      transform: translateY(-5px);
+      transform: translateY(-2px);
       box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+    .shop-now-btn:active {
+      transform: scale(0.96);
     }
 
     .slider-dots { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 10; }
@@ -852,10 +887,12 @@ import { catchError, of, Subscription } from 'rxjs';
     .ribbon-item {
       white-space: nowrap; padding: 10px 22px; border-radius: 100px;
       background: white; border: 1px solid rgba(0,0,0,0.08);
-      font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s;
+      font-weight: 700; font-size: 0.85rem; cursor: pointer; 
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms ease, color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
       color: #555; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
-    .ribbon-item:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-2px); }
+    .ribbon-item:hover { border-color: var(--primary-color); color: var(--primary-color); }
+    .ribbon-item:active { transform: scale(0.95); }
     .ribbon-item.active { background: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
     
     .btn-ribbon-expand {
@@ -887,11 +924,13 @@ import { catchError, of, Subscription } from 'rxjs';
     }
     .glass-card {
       background: rgba(255,255,255,0.8); backdrop-filter: blur(15px); border-radius: 24px; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.4); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+      border: 1px solid rgba(255,255,255,0.4); 
+      transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1), border-color 200ms ease; 
       display: flex; flex-direction: column; position: relative;
       box-shadow: 0 8px 30px rgba(0,0,0,0.04);
     }
-    .glass-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.12); border-color: var(--primary-color); }
+    .glass-card:hover { box-shadow: 0 20px 50px rgba(0,0,0,0.12); border-color: var(--primary-color); }
+    .glass-card:active { transform: scale(0.98); }
     
     .card-image-wrapper { 
       position: relative; 
@@ -937,11 +976,13 @@ import { catchError, of, Subscription } from 'rxjs';
     
     .btn-main-action { 
       padding: 10px 18px; border-radius: 14px; background: var(--primary-color); 
-      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; 
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease;
       color: white; border: none; font-weight: 800; font-size: 0.85rem;
       white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    .btn-main-action:hover { transform: scale(1.08); box-shadow: 0 8px 25px rgba(0,0,0,0.2); filter: brightness(1.1); }
+    .btn-main-action:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.2); filter: brightness(1.1); }
+    .btn-main-action:active { transform: scale(0.94); }
 
     .image-overlay {
       position: absolute; inset: 0; background: rgba(0,0,0,0.2);
@@ -1042,14 +1083,23 @@ import { catchError, of, Subscription } from 'rxjs';
 
     /* Modal & Specs */
     .modal-overlay { 
-      position: fixed; inset: 0; background: rgba(0,0,0,0.78); 
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+      backdrop-filter: blur(8px);
       z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px;
       contain: layout style;
+      animation: overlayEnter 300ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
+    @keyframes overlayEnter { from { opacity: 0; } to { opacity: 1; } }
+
     .modal-content { 
       width: 95%; max-width: 600px; max-height: 90vh; background: white; 
       border-radius: 30px; display: flex; flex-direction: column; overflow: hidden;
       transform: translateZ(0);
+      animation: modalEnter 400ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes modalEnter { 
+      from { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(8px); } 
+      to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } 
     }
     .modal-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
     .close-btn { padding: 0 !important; min-height: unset !important; width: 40px; height: 40px; background: #f4f4f4; border-radius: 10px; overflow: visible; }
@@ -1102,7 +1152,12 @@ import { catchError, of, Subscription } from 'rxjs';
     .option-pill.sold-out { opacity: 0.4; cursor: not-allowed; background: #f1f5f9; text-decoration: line-through; }
     .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
     
-    .modal-footer { padding: 25px 30px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+    .modal-footer { 
+      padding: 25px 30px; background: rgba(250,250,250,0.9); backdrop-filter: blur(10px);
+      border-top: 1px solid #f0f0f0; position: sticky; bottom: 0; z-index: 10; 
+    }
+    details > summary { cursor: pointer; color: var(--primary-color); font-weight: 700; user-select: none; }
+    details > summary h4 { display: inline-block; margin: 0; }
     .confirm-btn { width: 100%; height: 54px; background: #1a1a1a; color: white; border-radius: 15px; font-weight: 900; cursor: pointer; }
     .confirm-btn:disabled { background: #ccc; cursor: not-allowed; }
     .footer-business-name {
@@ -1245,17 +1300,17 @@ import { catchError, of, Subscription } from 'rxjs';
 
     /* Lateral Cart Drawer */
     .cart-drawer-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+      position: fixed; inset: 0; background: rgba(0,0,0,0.3); 
+      backdrop-filter: blur(8px);
       z-index: 4000; display: flex; justify-content: flex-end;
-      animation: fadeIn 0.3s ease;
+      animation: overlayEnter 300ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
     .cart-drawer {
       width: 100%; max-width: 450px; height: 100%; background: white;
       display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.1);
-      animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: slideInRight 400ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
     @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .cart-drawer-header { padding: 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
     .cart-drawer-header h3 { margin: 0; font-size: 1.5rem; font-weight: 900; }
@@ -1264,7 +1319,17 @@ import { catchError, of, Subscription } from 'rxjs';
     .empty-cart-msg { text-align: center; padding-top: 100px; color: #888; }
     .shop-btn { margin-top: 20px; background: #1a1a1a; color: white; padding: 12px 30px; border-radius: 100px; font-weight: 700; border: none; cursor: pointer; }
     
-    .cart-drawer-item { display: flex; gap: 20px; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid #f8f8f8; }
+    .cart-drawer-item { 
+      display: flex; gap: 20px; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid #f8f8f8; 
+      opacity: 0; transform: translateY(10px);
+      animation: itemEnter 400ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    .cart-drawer-item:nth-child(1) { animation-delay: 100ms; }
+    .cart-drawer-item:nth-child(2) { animation-delay: 150ms; }
+    .cart-drawer-item:nth-child(3) { animation-delay: 200ms; }
+    .cart-drawer-item:nth-child(n+4) { animation-delay: 250ms; }
+    @keyframes itemEnter { to { opacity: 1; transform: translateY(0); } }
+
     .item-img-box { width: 80px; height: 80px; background: #f9f9f9; border-radius: 15px; overflow: hidden; flex-shrink: 0; }
     .item-img-box img { width: 100%; height: 100%; object-fit: contain; }
     .item-info { flex: 1; }
@@ -1280,13 +1345,17 @@ import { catchError, of, Subscription } from 'rxjs';
       display: flex; align-items: center; background: #f5f5f7; 
       padding: 6px 12px; border-radius: 12px; gap: 18px; 
     }
-    .qty-controls button { background: none; border: none; padding: 0; cursor: pointer; font-weight: 900; display: flex; align-items: center; }
+    .qty-controls button { 
+      background: none; border: none; padding: 0; cursor: pointer; font-weight: 900; display: flex; align-items: center; 
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .qty-controls button:active { transform: scale(0.85); }
     .qty-controls span { font-weight: 800; min-width: 20px; text-align: center; font-size: 0.95rem; color: #1a1a1a; }
     .item-remove { 
       background: #fff1f1; color: #ff3b30; border: none; 
       width: 42px; height: 42px; border-radius: 12px; 
       cursor: pointer; display: flex; align-items: center; justify-content: center; 
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
       box-shadow: 0 2px 8px rgba(255, 59, 48, 0.05);
       position: relative; overflow: visible;
       padding: 0; z-index: 5;
@@ -1296,9 +1365,9 @@ import { catchError, of, Subscription } from 'rxjs';
     
     .item-remove:hover { 
       background: #ff3b30; color: #ffffff !important; 
-      transform: scale(1.1) rotate(5deg);
       box-shadow: 0 8px 20px rgba(255, 59, 48, 0.2);
     }
+    .item-remove:active { transform: scale(0.92); }
     .item-remove .trash-icon { 
       width: 20px; height: 20px; 
       stroke: currentColor; 
@@ -1310,7 +1379,13 @@ import { catchError, of, Subscription } from 'rxjs';
     .cart-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
     .cart-total-row span { font-size: 1.1rem; font-weight: 700; color: #666; }
     .total-val { font-size: 1.8rem !important; font-weight: 950 !important; color: #1a1a1a !important; }
-    .checkout-btn { width: 100%; height: 60px; background: var(--primary-color); color: white; border-radius: 15px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; border: none; font-size: 1.1rem; }
+    .checkout-btn { 
+      width: 100%; height: 60px; background: var(--primary-color); color: white; border-radius: 15px; font-weight: 900; 
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; border: none; font-size: 1.1rem; 
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease;
+    }
+    .checkout-btn:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .checkout-btn:active { transform: scale(0.97); }
 
     /* Fly Animation & Pulse */
     .fly-particle {
@@ -1390,6 +1465,15 @@ import { catchError, of, Subscription } from 'rxjs';
     .schedule-item.is-today { background: #f0f7ff; border-color: var(--primary-color); font-weight: 800; }
     .day-label { color: #64748b; font-weight: 700; }
     .is-today .day-label { color: var(--primary-color); }
+    .specs-section, .description-section, .combo-section { margin-bottom: 25px; }
+    .specs-section h4, .description-section h4, .combo-section h4 { margin-top: 0; margin-bottom: 12px; font-size: 0.95rem; font-weight: 800; color: #1a1a1a; }
+    .specs-table { border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.7); }
+    
+    .combo-section { padding: 20px; background: rgba(255,255,255,0.7); border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); }
+    .combo-items-list { display: flex; flex-direction: column; gap: 8px; }
+    .combo-item-pill { display: flex; align-items: center; gap: 10px; padding: 10px 15px; background: white; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); }
+    .combo-qty { background: var(--primary-color); color: white; padding: 2px 8px; border-radius: 6px; font-weight: 900; font-size: 0.8rem; }
+    .combo-name { font-weight: 700; font-size: 0.9rem; color: #333; }
     .time-range { font-weight: 800; color: #1a1a1a; }
     .closed-text { color: #ef4444; font-style: italic; }
     .status-notice {
@@ -1662,6 +1746,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
       return matchesCategory && matchesSearch;
     });
     this.cdr.markForCheck();
+  }
+
+  getComboProduct(productId: number): Product | undefined {
+    return this.products.find(x => x.id === productId);
   }
 
   onAddClick(product: Product, event?: MouseEvent) {

@@ -34,16 +34,24 @@ export class CreateOrderDto {
   storeId: string;
 
   @IsString()
-  @IsNotEmpty()
-  customerName: string;
+  @IsOptional()
+  customerName?: string;
 
   @IsString()
-  @IsNotEmpty()
-  customerPhone: string;
+  @IsOptional()
+  customerPhone?: string;
 
   @IsString()
   @IsOptional()
   customerAddress?: string;
+
+  @IsUUID()
+  @IsOptional()
+  tableId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  waiterId?: string;
 
   @IsNumber()
   @IsNotEmpty()

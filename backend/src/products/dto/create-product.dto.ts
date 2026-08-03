@@ -49,4 +49,11 @@ export class CreateProductDto {
   @IsNumber()
   @IsOptional()
   lowStockThreshold?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isCombo?: boolean;
+
+  @IsOptional()
+  comboItems?: any[];
 }

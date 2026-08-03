@@ -58,6 +58,22 @@
           </button>
 
           <button 
+            *ngIf="settings && settings.store_type === 'RESTAURANT'"
+            class="tab-btn" 
+            [class.active]="activeTab === 'tables'" 
+            (click)="setActiveTab('tables')">
+            <i class="fas fa-th-large" style="margin-right: 8px;"></i> Mesas (POS)
+          </button>
+          
+          <button 
+            *ngIf="settings && settings.store_type === 'RESTAURANT'"
+            class="tab-btn" 
+            [class.active]="activeTab === 'staff'" 
+            (click)="setActiveTab('staff')">
+            <i class="fas fa-users" style="margin-right: 8px;"></i> Personal
+          </button>
+
+          <button 
             class="tab-btn" 
             [class.active]="activeTab === 'settings'" 
             (click)="setActiveTab('settings')">
@@ -114,6 +130,8 @@
           [product]="currentProduct"
           [editingProduct]="editingProduct"
           [isSaving]="isSaving"
+          [settings]="settings"
+          [products]="products"
           (save)="saveProduct()"
           (close)="closeForm()"
           (uploadImage)="onProductImageUpload($event)"
@@ -124,6 +142,7 @@
       <div *ngSwitchCase="'orders'">
         <app-orders
           [orders]="orders"
+          [settings]="settings"
           (statusChange)="changeStatus($event.order, $event.status)"
           (viewDetails)="viewOrderDetails($event)"
           (delete)="deleteOrder($event)"
@@ -139,6 +158,13 @@
         </div>
       </div>
       
+      <div *ngSwitchCase="'tables'">
+        <app-pos-tables [products]="products" [settings]="settings"></app-pos-tables>
+      </div>
+      
+      <div *ngSwitchCase="'staff'">
+        <app-staff></app-staff>
+      </div>
 
 
       <div *ngSwitchCase="'settings'">
@@ -173,7 +199,9 @@
       *ngIf="selectedOrder"
       [order]="selectedOrder"
       [settings]="settings"
-      (close)="selectedOrder = null">
+      [products]="products"
+      (close)="selectedOrder = null"
+      (orderUpdated)="onOrderUpdated()">
     </app-order-detail-modal>
 
 

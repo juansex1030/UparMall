@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
+
   constructor(private readonly mailerService: MailerService) {}
 
   async sendWelcomeEmail(email: string) {
@@ -39,7 +41,7 @@ export class MailService {
           </div>
         `,
       });
-      console.log(`Welcome email sent to ${email}`);
+      this.logger.log(`Welcome email sent to ${email}`);
     } catch (error) {
       console.error(`Error sending welcome email to ${email}:`, error);
     }

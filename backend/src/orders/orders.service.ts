@@ -1,11 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { AddItemsDto } from './dto/add-items.dto';
 
 @Injectable()
 export class OrdersService {
@@ -36,10 +38,12 @@ export class OrdersService {
         customer_name: orderData.customerName,
         customer_phone: orderData.customerPhone,
         customer_address: orderData.customerAddress,
+        table_id: orderData.tableId,
+        waiter_id: orderData.waiterId,
         total: orderData.total,
         payment_method: orderData.paymentMethod,
         notes: orderData.notes,
-        status: 'pendiente',
+        status: orderData.tableId ? 'open' : 'pendiente',
         created_at: now,
         updated_at: now,
       };
@@ -95,12 +99,257 @@ export class OrdersService {
         console.error('Error inserting order items:', itemsError.message);
       }
 
+      // 4. Decrement Stock (Including Combos)
+      for (const item of items) {
+        const { data: prod } = await this.supabase.adminClient
+          .from('Product')
+          .select('isCombo, comboItems, manageStock, stock')
+          .eq('id', item.productId)
+          .single();
+
+        if (prod) {
+          if (prod.isCombo && prod.comboItems) {
+            for (const comboItem of prod.comboItems) {
+              const { data: componentProd } = await this.supabase.adminClient
+                .from('Product')
+                .select('manageStock, stock')
+                .eq('id', comboItem.productId)
+                .single();
+
+              if (componentProd && componentProd.manageStock) {
+                const newStock = Math.max(
+                  0,
+                  (componentProd.stock || 0) -
+                    comboItem.quantity * item.quantity,
+                );
+                await this.supabase.adminClient
+                  .from('Product')
+                  .update({ stock: newStock })
+                  .eq('id', comboItem.productId);
+              }
+            }
+          } else if (prod.manageStock) {
+            const newStock = Math.max(0, (prod.stock || 0) - item.quantity);
+            await this.supabase.adminClient
+              .from('Product')
+              .update({ stock: newStock })
+              .eq('id', item.productId);
+          }
+        }
+      }
+
       return order;
     } catch (error: unknown) {
       console.error('CRITICAL ORDER ERROR:', error);
       throw new InternalServerErrorException(
         error instanceof Error ? error.message : 'Error creando orden',
       );
+    }
+  }
+
+  async addItems(orderId: string, addItemsDto: AddItemsDto, storeId: string) {
+    try {
+      // 1. Verify order belongs to store and is not closed/paid
+      const { data: order, error: orderError } = await this.supabase.adminClient
+        .from('Orders')
+        .select('id, total, status')
+        .eq('id', orderId)
+        .eq('store_id', storeId)
+        .single();
+
+      if (orderError || !order) {
+        throw new NotFoundException('Pedido no encontrado');
+      }
+
+      // In a restaurant, 'open', 'pendiente', 'preparing' are modifiable
+      if (
+        ['pagado', 'paid', 'cancelled', 'cancelado'].includes(
+          order.status.toLowerCase(),
+        )
+      ) {
+        throw new BadRequestException(
+          'No se pueden añadir productos a un pedido ya cerrado o pagado',
+        );
+      }
+
+      const items = addItemsDto.items;
+
+      // 2. Insert new Order Items
+      const itemsPayload = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.productId,
+        product_name: item.productName,
+        price: item.price,
+        quantity: item.quantity,
+        options: item.notes ? { 'Nota adicional': item.notes } : null,
+      }));
+
+      const { error: itemsError } = await this.supabase.adminClient
+        .from('OrderItems')
+        .insert(itemsPayload);
+
+      if (itemsError) throw itemsError;
+
+      // 3. Update Order Total
+      const newItemsTotal = items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
+      const newTotal = Number(order.total) + newItemsTotal;
+
+      await this.supabase.adminClient
+        .from('Orders')
+        .update({ total: newTotal, updated_at: new Date().toISOString() })
+        .eq('id', order.id);
+
+      // 4. Decrement Stock (Simplified for brevity, similar to create)
+      for (const item of items) {
+        const { data: prod } = await this.supabase.adminClient
+          .from('Product')
+          .select('manageStock, stock')
+          .eq('id', item.productId)
+          .single();
+
+        if (prod && prod.manageStock) {
+          const newStock = Math.max(0, (prod.stock || 0) - item.quantity);
+          await this.supabase.adminClient
+            .from('Product')
+            .update({ stock: newStock })
+            .eq('id', item.productId);
+        }
+      }
+
+      return { success: true, newTotal };
+    } catch (error: unknown) {
+      console.error('Error in addItems:', error);
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error al añadir productos al pedido',
+      );
+    }
+  }
+
+  async removeItem(orderId: string, itemId: string, storeId: string) {
+    try {
+      // 1. Verify order belongs to store and is not closed
+      const { data: order, error: orderError } = await this.supabase.adminClient
+        .from('Orders')
+        .select('id, total, status')
+        .eq('id', orderId)
+        .eq('store_id', storeId)
+        .single();
+
+      if (orderError || !order) {
+        throw new NotFoundException('Pedido no encontrado');
+      }
+
+      if (['pagado', 'paid', 'cancelled', 'cancelado', 'entregado'].includes(order.status.toLowerCase())) {
+        throw new BadRequestException('No se pueden eliminar productos de un pedido ya cerrado o pagado');
+      }
+
+      // 2. Find the OrderItem
+      const { data: item, error: itemError } = await this.supabase.adminClient
+        .from('OrderItems')
+        .select('id, product_id, price, quantity')
+        .eq('id', itemId)
+        .eq('order_id', orderId)
+        .single();
+
+      if (itemError || !item) {
+        throw new NotFoundException('Producto del pedido no encontrado');
+      }
+
+      // 3. Delete the OrderItem
+      const { error: deleteError } = await this.supabase.adminClient
+        .from('OrderItems')
+        .delete()
+        .eq('id', itemId);
+
+      if (deleteError) throw deleteError;
+
+      // 4. Update the order total
+      const itemTotal = Number(item.price) * Number(item.quantity);
+      const newTotal = Math.max(0, Number(order.total) - itemTotal);
+
+      await this.supabase.adminClient
+        .from('Orders')
+        .update({ total: newTotal, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      // 5. Restore stock
+      const { data: prod } = await this.supabase.adminClient
+        .from('Product')
+        .select('manageStock, stock')
+        .eq('id', item.product_id)
+        .single();
+
+      if (prod && prod.manageStock) {
+        const restoredStock = (prod.stock || 0) + item.quantity;
+        await this.supabase.adminClient
+          .from('Product')
+          .update({ stock: restoredStock })
+          .eq('id', item.product_id);
+      }
+
+      return { success: true, newTotal };
+    } catch (error: unknown) {
+      console.error('Error in removeItem:', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al eliminar producto del pedido');
+    }
+  }
+
+  async applyDiscount(orderId: string, amount: number, reason: string, storeId: string) {
+    try {
+      const { data: order, error: orderError } = await this.supabase.adminClient
+        .from('Orders')
+        .select('id, total, status, notes')
+        .eq('id', orderId)
+        .eq('store_id', storeId)
+        .single();
+
+      if (orderError || !order) {
+        throw new NotFoundException('Pedido no encontrado');
+      }
+
+      if (['pagado', 'paid', 'cancelled', 'cancelado', 'entregado'].includes(order.status.toLowerCase())) {
+        throw new BadRequestException('No se pueden aplicar descuentos a un pedido ya cerrado o pagado');
+      }
+
+      if (amount <= 0) {
+        throw new BadRequestException('El monto del descuento debe ser mayor a 0');
+      }
+
+      const newTotal = Math.max(0, Number(order.total) - amount);
+      const discountNote = `[DESCUENTO APLICADO: -$${amount}] ${reason || ''}`;
+      
+      let newNotes = order.notes ? order.notes + '\n' + discountNote : discountNote;
+
+      const { error: updateError } = await this.supabase.adminClient
+        .from('Orders')
+        .update({ 
+          total: newTotal, 
+          notes: newNotes,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', orderId);
+
+      if (updateError) throw updateError;
+
+      return { success: true, newTotal, notes: newNotes };
+    } catch (error: unknown) {
+      console.error('Error in applyDiscount:', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al aplicar el descuento');
     }
   }
 
@@ -145,6 +394,21 @@ export class OrdersService {
 
     if (error || !data)
       throw new InternalServerErrorException('No se pudo actualizar el estado');
+
+    // Free the table if the order is completed or cancelled
+    if (
+      ['completed', 'cancelled', 'pagado', 'cancelado', 'entregado'].includes(
+        status.toLowerCase(),
+      )
+    ) {
+      if (data.table_id) {
+        await this.supabase.adminClient
+          .from('Tables')
+          .update({ status: 'free', current_order_id: null })
+          .eq('id', data.table_id);
+      }
+    }
+
     return data;
   }
 
@@ -176,22 +440,27 @@ export class OrdersService {
     return { success: true };
   }
 
-  async getStats(storeId: string) {
+  async getStats(storeId: string, period: string = '30d') {
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const startDate = thirtyDaysAgo.toISOString();
-
-      // Fetch orders with items and customer info
-      const { data: orders, error } = await this.supabase.adminClient
+      let query = this.supabase.adminClient
         .from('Orders')
         .select(
-          'total, created_at, status, customer_phone, OrderItems(product_name, quantity)',
+          'total, created_at, status, customer_phone, OrderItems(product_name, quantity, price)',
         )
         .eq('store_id', storeId)
-        .gte('created_at', startDate)
         .order('created_at', { ascending: true });
 
+      if (period === '30d') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        query = query.gte('created_at', thirtyDaysAgo.toISOString());
+      } else if (period === '12m') {
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+        query = query.gte('created_at', twelveMonthsAgo.toISOString());
+      }
+
+      const { data: orders, error } = await query;
       if (error) throw error;
 
       const stats = {
@@ -207,29 +476,54 @@ export class OrdersService {
       const productMap: Record<string, number> = {};
       const customerMap: Record<string, number> = {};
 
-      // Initialize last 30 days
-      for (let i = 0; i < 30; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
-        dailyData[dateStr] = { total: 0, count: 0 };
+      if (period === '30d') {
+        for (let i = 0; i < 30; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dateStr = d.toISOString().split('T')[0];
+          dailyData[dateStr] = { total: 0, count: 0 };
+        }
+      } else if (period === '12m') {
+        for (let i = 0; i < 12; i++) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          const monthStr = d.toISOString().substring(0, 7);
+          dailyData[monthStr] = { total: 0, count: 0 };
+        }
       }
 
       (orders as any[]).forEach((order) => {
-        const dateStr = String(order.created_at).split('T')[0];
-        const amount = Number(order.total) || 0;
-        const isDelivered = String(order.status) === 'entregado';
+        let dateKey = '';
+        if (period === '30d') {
+          dateKey = String(order.created_at).split('T')[0];
+        } else {
+          dateKey = String(order.created_at).substring(0, 7);
+        }
 
-        // Revenue and Product Popularity ONLY for delivered orders
+        if (period === 'all' && !dailyData[dateKey]) {
+          dailyData[dateKey] = { total: 0, count: 0 };
+        }
+
+        // Calculate revenue exclusively from items to avoid delivery fees
+        const amount = (order.OrderItems || []).reduce(
+          (sum: number, item: any) => {
+            return (
+              sum + (Number(item.price) || 0) * (Number(item.quantity) || 1)
+            );
+          },
+          0,
+        );
+
+        const isDelivered =
+          String(order.status).toLowerCase().trim() === 'entregado';
+
         if (isDelivered) {
           stats.totalRevenue += amount;
 
-          // Daily aggregation only for delivered revenue
-          if (dailyData[dateStr]) {
-            dailyData[dateStr].total += amount;
+          if (dailyData[dateKey]) {
+            dailyData[dateKey].total += amount;
           }
 
-          // Product popularity (ONLY for delivered orders now)
           (order.OrderItems || []).forEach(
             (item: { product_name?: string; quantity?: number }) => {
               const name = item.product_name || 'Producto Desconocido';
@@ -238,12 +532,10 @@ export class OrdersService {
           );
         }
 
-        // We still count the order in total quantity for historical volume purposes
-        if (dailyData[dateStr]) {
-          dailyData[dateStr].count += 1;
+        if (dailyData[dateKey]) {
+          dailyData[dateKey].count += 1;
         }
 
-        // Customer retention (by phone)
         const phone = String(order.customer_phone || 'Desconocido');
         customerMap[phone] = (customerMap[phone] || 0) + 1;
       });
@@ -270,7 +562,7 @@ export class OrdersService {
 
       // Calculate Average Ticket only on delivered orders
       const deliveredOrders = (orders as any[]).filter(
-        (o) => String(o.status) === 'entregado',
+        (o) => String(o.status).toLowerCase().trim() === 'entregado',
       );
       stats.averageTicket =
         deliveredOrders.length > 0

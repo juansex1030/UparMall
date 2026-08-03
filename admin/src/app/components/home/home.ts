@@ -75,41 +75,63 @@ import { Subscription } from 'rxjs';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      background: #050505;
       padding: 20px;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
     }
     .glass-panel {
-      background: rgba(255, 255, 255, 0.97);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.8);
+      background: #0a0a0a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      border: 1px solid #222222;
       border-radius: 24px;
       padding: 40px;
       width: 100%;
       max-width: 450px;
     }
     .brand { text-align: center; margin-bottom: 30px; }
-    .brand h1 { color: #3f51b5; margin: 0 0 10px 0; font-size: 2rem; }
-    .brand p { color: #666; margin: 0; }
+    .brand h1 { color: #ffffff; margin: 0 0 10px 0; font-size: 2rem; font-weight: 900; letter-spacing: -1px; }
+    .brand p { color: #cccccc; margin: 0; }
     
-    .auth-tabs { display: flex; margin-bottom: 25px; border-radius: 12px; background: #eee; padding: 5px; }
-    .auth-tabs button { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-weight: 600; color: #666; transition: 0.3s; }
-    .auth-tabs button.active { background: white; color: #3f51b5; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    
+    form {
+      animation: formEnter 300ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes formEnter {
+      from { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+      to { opacity: 1; transform: scale(1); filter: blur(0); }
+    }
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 0.9rem; }
-    .form-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; transition: 0.3s; box-sizing: border-box; }
-    .form-group input:focus { border-color: #3f51b5; outline: none; box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.1); }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #cccccc; font-size: 0.9rem; }
+    .form-group input { width: 100%; padding: 12px 15px; background: #111111; color: #ffffff; border: 1px solid #333333; border-radius: 8px; font-size: 1rem; transition: 0.3s; box-sizing: border-box; }
+    .form-group input:focus { border-color: #ffffff; outline: none; }
     
-    .submit-btn { width: 100%; background: #3f51b5; color: white; padding: 14px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-    .submit-btn:hover:not(:disabled) { background: #303f9f; }
-    .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .submit-btn { 
+      width: 100%; background: #ffffff; color: #000000; padding: 14px; border: none; border-radius: 8px; 
+      font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 10px; 
+      transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .submit-btn:hover:not(:disabled) { background: #eeeeee; }
+    .submit-btn:active:not(:disabled) { transform: scale(0.97); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     
-    .cancel-btn { width: 100%; background: transparent; color: #666; padding: 14px; border: none; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+    .cancel-btn { 
+      width: 100%; background: transparent; color: #cccccc; padding: 14px; border: 1px solid #333333; 
+      border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 10px; 
+      transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1); 
+    }
+    .cancel-btn:hover { background: #111111; color: #ffffff; }
+    .cancel-btn:active { transform: scale(0.97); }
     
-    .forgot-link { background: transparent; border: none; color: #3f51b5; padding: 0; font-size: 0.85rem; cursor: pointer; margin-bottom: 15px; text-decoration: underline; }
-    .hint { font-size: 0.85rem; color: #666; text-align: center; margin-top: 15px; line-height: 1.4; }
+    .forgot-link { 
+      background: transparent; border: none; color: #cccccc; padding: 0; font-size: 0.85rem; 
+      cursor: pointer; margin-bottom: 15px; text-decoration: underline; 
+      transition: color 160ms ease; 
+    }
+    .forgot-link:hover { color: #ffffff; }
+    .hint { font-size: 0.85rem; color: #aaaaaa; text-align: center; margin-top: 15px; line-height: 1.4; }
     .msg { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; }
-    .msg.error { background: #fff0f0; color: #e74c3c; border: 1px solid #f5c6cb; }
-    .msg.success { background: #f0fff4; color: #27ae60; border: 1px solid #c3e6cb; }
+    .msg.error { background: rgba(231, 76, 60, 0.1); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.2); }
+    .msg.success { background: rgba(39, 174, 96, 0.1); color: #27ae60; border: 1px solid rgba(39, 174, 96, 0.2); }
   `]
 })
 export class HomeComponent implements OnInit, OnDestroy {
@@ -126,6 +148,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (session) {
       this.router.navigate(['/']);
     }
+
+    this._authSub = this.authService.authEvent$.subscribe(event => {
+      if (event === 'PASSWORD_RECOVERY') this.setMode('update-password');
+      this.cdr.detectChanges();
+    });
   }
 
   private setMode(m: typeof this.mode) {
@@ -139,12 +166,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {
-    this._authSub = this.authService.authEvent$.subscribe(event => {
-      if (event === 'PASSWORD_RECOVERY') this.setMode('update-password');
-      this.cdr.detectChanges();
-    });
-  }
+  ) {}
 
   ngOnDestroy() {
     this._authSub?.unsubscribe();

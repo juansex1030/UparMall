@@ -6,6 +6,11 @@ export interface Product {
   imageUrl?: string;
   category?: string;
   isActive: boolean;
+  isCombo?: boolean;
+  comboItems?: { productId: number; quantity: number }[];
+  manageStock?: boolean;
+  stock?: number;
+  lowStockThreshold?: number;
   variants?: ProductVariant[];
   specifications?: ProductSpecification[];
 }
@@ -73,6 +78,15 @@ export interface Settings {
   address?: string;
   nit?: string;
   guaranteeTerms?: string;
+  allowDigitalTransfers?: boolean;
+  digitalTransferDetails?: string;
+  digitalAccounts?: DigitalAccount[];
+}
+
+export interface DigitalAccount {
+  bank: 'nequi' | 'daviplata' | 'breb' | 'bancolombia' | 'otro';
+  number: string;
+  name: string;
 }
 
 export interface CartItem {

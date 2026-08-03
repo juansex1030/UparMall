@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
 import { DataService } from '../../shared/services/data.service';
-
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -11,71 +10,31 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="landing-container">
-      <!-- Animated Background Blobs -->
-      <div class="blob-wrapper">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-      </div>
-
       <!-- Navbar -->
       <nav class="landing-nav">
         <div class="nav-content">
           <div class="logo-group">
-            <img src="/assets/logo-uparmall.png" alt="UparMall">
-            <span>UparMall</span>
+            <img src="/assets/logo-uparmall.png" alt="UparMall" class="nav-logo">
+            <span class="logo-text">UparMall</span>
           </div>
-          <a [href]="adminUrl" class="btn-login">
-            <i class="fas fa-right-to-bracket"></i> Ingreso
-          </a>
+          <a [href]="adminUrl" class="btn-login">Ingreso <i class="fas fa-arrow-right"></i></a>
         </div>
       </nav>
 
       <!-- Hero Section -->
       <section class="hero-section">
-        <div class="hero-bg"></div>
+        <div class="grid-overlay"></div>
         <div class="hero-content">
-          <span class="badge">Digitaliza tu éxito</span>
-          <h1>Tu tienda, tu marca,<br><span class="gradient-text">tu espacio.</span></h1>
-          <p>La plataforma integral para crear tu catálogo digital en minutos, gestionar inventario y vender profesionalmente por WhatsApp.</p>
+          <h1>Digitaliza tu negocio.<br>Domina tus ventas.</h1>
+          <p>La infraestructura definitiva para crear tu catálogo digital, gestionar inventarios precisos y escalar tus ventas por WhatsApp con total control.</p>
+          <a href="#contact" class="btn-primary">Comenzar ahora</a>
         </div>
       </section>
 
-      <!-- About Section (NOW ABOVE SLIDER) -->
-      <section id="about" class="about-section">
-        <div class="section-header">
-          <h2>¿Por qué elegir UparMall?</h2>
-          <div class="divider"></div>
-        </div>
-        <div class="about-grid">
-          <div class="about-card">
-            <div class="icon-box"><i class="fas fa-bolt"></i></div>
-            <h3>Rapidez Total</h3>
-            <p>Configura tu tienda y sube tus productos en menos de 10 minutos. Sin complicaciones técnicas.</p>
-          </div>
-          <div class="about-card">
-            <div class="icon-box"><i class="fab fa-whatsapp"></i></div>
-            <h3>Venta por WhatsApp</h3>
-            <p>Recibe pedidos organizados directamente en tu chat. Cierra ventas de forma humana y efectiva.</p>
-          </div>
-          <div class="about-card">
-            <div class="icon-box"><i class="fas fa-chart-line"></i></div>
-            <h3>Control Total</h3>
-            <p>Gestiona stock, estadísticas y fidelización de clientes desde un panel administrativo intuitivo.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Store Slider Section -->
-      <section class="stores-section" *ngIf="stores.length > 0">
-        <div class="section-header">
-          <h2>Marcas que confían en nosotros</h2>
-          <div class="divider"></div>
-        </div>
-        
+      <!-- Store Slider Section (Infinite) -->
+      <section class="stores-section" *ngIf="stores.length > 0 || infiniteStoresList.length > 0">
         <div class="slider-container">
           <div class="slider-track">
-            <!-- Items duplicated for seamless loop -->
             <div class="store-logo-item" *ngFor="let store of infiniteStoresList" (click)="goToStore(store.slug)">
               <div class="logo-wrapper">
                 <img [src]="store.logo" [alt]="store.name">
@@ -86,212 +45,218 @@ import { FormsModule } from '@angular/forms';
         </div>
       </section>
 
+      <!-- Features Section -->
+      <section id="about" class="features-section">
+        <div class="features-header">
+          <h2>Arquitectura de alto rendimiento<br>para tu tienda.</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-number">01</div>
+            <h3>Rapidez de Despliegue</h3>
+            <p>Implementa tu tienda y sincroniza tu catálogo de productos en minutos. Arquitectura diseñada para eliminar la fricción técnica.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-number">02</div>
+            <h3>Integración WhatsApp</h3>
+            <p>Centraliza la recepción de pedidos en tu línea principal. Convierte conversaciones en transacciones cerradas de forma fluida.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-number">03</div>
+            <h3>Gestión Analítica</h3>
+            <p>Control de inventario en tiempo real, trazabilidad de flujo de caja y métricas de fidelización desde un dashboard robusto.</p>
+          </div>
+        </div>
+      </section>
+
       <!-- Contact Section -->
       <section id="contact" class="contact-section">
-        <div class="contact-card">
+        <div class="contact-wrapper">
           <div class="contact-info">
-            <h2>¿Quieres digitalizar tu negocio?</h2>
-            <p>Déjanos tus datos y nos pondremos en contacto contigo para ayudarte a crear tu tienda en UparMall.</p>
+            <h2>Solicita acceso.</h2>
+            <p>Contáctanos para habilitar tu espacio en la plataforma UparMall y digitalizar tu operación.</p>
           </div>
           <form class="contact-form" (ngSubmit)="onContactSubmit()">
-            <div class="form-group">
+            <div class="input-row">
               <input type="text" placeholder="Nombre completo" name="name" [(ngModel)]="contactData.name" required>
             </div>
-            <div class="form-group">
+            <div class="input-row">
               <input type="email" placeholder="Correo electrónico" name="email" [(ngModel)]="contactData.email" required>
             </div>
-            <div class="form-group">
-              <input type="tel" placeholder="WhatsApp / Teléfono" name="phone" [(ngModel)]="contactData.phone" required>
+            <div class="input-row">
+              <input type="tel" placeholder="Teléfono corporativo" name="phone" [(ngModel)]="contactData.phone" required>
             </div>
-            <div class="form-group">
-              <textarea placeholder="Cuéntanos un poco sobre tu negocio" name="message" [(ngModel)]="contactData.message"></textarea>
+            <div class="input-row">
+              <textarea placeholder="Descripción operativa de tu negocio" name="message" [(ngModel)]="contactData.message"></textarea>
             </div>
-            <button type="submit" class="btn-primary" [disabled]="isSubmitting">
-              <i class="fas fa-paper-plane"></i> {{ isSubmitting ? 'Enviando...' : 'Enviar información' }}
+            <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Procesando...' : 'Enviar Solicitud' }}
             </button>
-            <p class="success-msg" *ngIf="contactSuccess">¡Gracias! Te contactaremos muy pronto.</p>
+            <p class="success-msg" *ngIf="contactSuccess">Solicitud recibida. Nuestro equipo te contactará en breve.</p>
           </form>
         </div>
       </section>
 
       <footer class="landing-footer">
-        <p>&copy; 2026 UparMall. Todos los derechos reservados.</p>
+        <div class="footer-content">
+          <span>&copy; 2026 UparMall Platform. Todos los derechos reservados.</span>
+        </div>
       </footer>
     </div>
   `,
   styles: [`
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
 
     :host {
-      --primary: #0096ff;
-      --secondary: #8e24aa;
-      --dark: #0f172a;
-      --bg: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-      font-family: 'Outfit', sans-serif;
+      --bg-dark: #050505;
+      --bg-surface: #0a0a0a;
+      --border-color: #222222;
+      --text-main: #ffffff;
+      --text-muted: #cccccc;
+      font-family: 'Inter', sans-serif;
     }
 
     .landing-container {
-      background: #0f172a;
+      background: var(--bg-dark);
       min-height: 100vh;
-      color: white;
+      color: var(--text-main);
       overflow-x: hidden;
-      position: relative;
     }
 
-    /* Animated Blobs */
-    .blob-wrapper {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 0; overflow: hidden; pointer-events: none;
-    }
-    .blob {
-      position: absolute; border-radius: 50%; filter: blur(80px);
-      opacity: 0.4; animation: float 20s infinite alternate ease-in-out;
-    }
-    .blob-1 { width: 600px; height: 600px; background: #6366f1; top: -10%; left: -10%; animation-duration: 25s; }
-    .blob-2 { width: 500px; height: 500px; background: #a855f7; bottom: -10%; right: -10%; animation-delay: -5s; }
-    .blob-3 { width: 400px; height: 400px; background: #0096ff; top: 40%; right: 20%; animation-duration: 30s; animation-delay: -10s; }
-
-    @keyframes float {
-      0% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(50px, 100px) scale(1.1); }
-      66% { transform: translate(-50px, 50px) scale(0.9); }
-      100% { transform: translate(0, 0) scale(1); }
-    }
-
-    /* Nav */
+    /* Navbar */
     .landing-nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      padding: 15px 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 20px 0; background: rgba(5, 5, 5, 0.8); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
     }
-    .nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+    .nav-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 40px; }
     .logo-group { display: flex; align-items: center; gap: 12px; }
-    .logo-group img { 
-      width: 40px; height: 40px; border-radius: 10px; 
-      background: white; padding: 4px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
-      object-fit: contain;
-    }
-    .logo-group span { font-weight: 800; font-size: 1.3rem; letter-spacing: -1px; color: white; }
+    .nav-logo { width: 28px; height: 28px; object-fit: contain; }
+    .logo-text { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.5px; }
+    
     .btn-login { 
-      text-decoration: none; color: white; font-weight: 700; font-size: 0.9rem; 
-      padding: 10px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); 
-      background: rgba(255,255,255,0.05); transition: 0.3s; display: flex; align-items: center; gap: 8px;
+      text-decoration: none; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; 
+      transition: color 0.2s; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px;
     }
-    .btn-login:hover { background: white; color: #0f172a; transform: translateY(-2px); }
+    .btn-login:hover { color: white; }
 
     /* Hero */
     .hero-section {
-      min-height: 90vh; display: flex; align-items: center; justify-content: center;
-      position: relative; padding: 140px 20px 60px; text-align: center;
-      animation: fadeIn 1.2s ease-out;
+      min-height: 70vh; display: flex; align-items: center; justify-content: center;
+      position: relative; padding: 120px 20px 60px; text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .grid-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background-image: 
+        linear-gradient(to right, #111 1px, transparent 1px),
+        linear-gradient(to bottom, #111 1px, transparent 1px);
+      background-size: 60px 60px; pointer-events: none; opacity: 0.5;
     }
     .hero-content { 
-      position: relative; z-index: 1; max-width: 850px; 
-      background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(30px);
-      padding: 80px 40px; border-radius: 48px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
+      position: relative; z-index: 1; max-width: 900px; 
+      animation: heroEnter 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
-    .badge { background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 8px 24px; border-radius: 100px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; display: inline-block; border: 1px solid rgba(99, 102, 241, 0.3); }
-    h1 { font-size: 5rem; line-height: 1; margin-bottom: 25px; font-weight: 900; letter-spacing: -4px; color: white; }
-    .gradient-text { background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p { font-size: 1.4rem; color: #94a3b8; max-width: 700px; margin: 0 auto 40px; line-height: 1.5; font-weight: 400; }
+    @keyframes heroEnter {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); filter: blur(4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    }
+    h1 { font-size: 5.5rem; line-height: 1.05; margin-bottom: 30px; font-weight: 900; letter-spacing: -3px; }
+    p { font-size: 1.25rem; color: var(--text-muted); max-width: 650px; margin: 0 auto 50px; line-height: 1.6; font-weight: 400; }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+    .btn-primary { 
+      background: white !important; color: black !important; padding: 18px 40px; text-decoration: none; font-weight: 600;
+      display: inline-block; font-size: 1rem; 
+      transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
     }
+    .btn-primary:hover { background: #e0e0e0 !important; }
+    .btn-primary:active { transform: scale(0.97); }
 
-    /* Section Header */
-    .section-header { text-align: center; margin-bottom: 70px; animation: fadeIn 1s both; }
-    .section-header h2 { font-size: 2.8rem; font-weight: 900; color: white; letter-spacing: -2px; }
-    .divider { width: 80px; height: 5px; background: linear-gradient(90deg, #6366f1, #a855f7); margin: 20px auto; border-radius: 10px; }
-
-    /* Stores Section */
-    .stores-section { padding: 100px 0; }
-    .slider-container { width: 100%; overflow: hidden; padding: 20px 0; position: relative; }
-    .slider-track { 
-      display: flex; 
-      width: max-content; 
-      animation: scroll 40s linear infinite; 
-      gap: 50px; 
+    /* Slider (Infinite) */
+    .stores-section { border-bottom: 1px solid var(--border-color); background: var(--bg-surface); padding: 60px 0; }
+    .slider-container { width: 100%; overflow: hidden; position: relative; }
+    
+    /* Fade edges */
+    .slider-container::before, .slider-container::after {
+      content: ""; position: absolute; top: 0; width: 150px; height: 100%; z-index: 2; pointer-events: none;
     }
+    .slider-container::before { left: 0; background: linear-gradient(to right, var(--bg-surface), transparent); }
+    .slider-container::after { right: 0; background: linear-gradient(to left, var(--bg-surface), transparent); }
+
+    .slider-track { display: flex; width: max-content; animation: scroll-left 40s linear infinite; gap: 80px; padding: 0 40px; }
     .slider-track:hover { animation-play-state: paused; }
 
     .store-logo-item { 
-      display: flex; flex-direction: column; align-items: center; gap: 15px; 
-      cursor: pointer; transition: 0.3s; width: 160px; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 15px; cursor: pointer; flex-shrink: 0; width: 140px; 
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .logo-wrapper { 
-      width: 110px; height: 110px; border-radius: 28px; background: rgba(255,255,255,0.1); padding: 18px;
-      display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1);
-    }
+    .logo-wrapper { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; transition: 200ms cubic-bezier(0.23, 1, 0.32, 1); filter: grayscale(100%) opacity(0.5); }
     .logo-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .store-name { font-size: 0.9rem; font-weight: 700; color: rgba(255,255,255,0.9); text-align: center; }
-    .store-logo-item:hover { transform: translateY(-8px); }
-    .store-logo-item:hover .store-name { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-
-    @keyframes scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); } 
-    }
-
-    /* About Section */
-    .about-section { max-width: 1200px; margin: 40px auto 100px; padding: 0 20px; }
-    .about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-    .about-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); padding: 45px 40px; border-radius: 32px; transition: 0.3s; backdrop-filter: blur(15px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-    .about-card:hover { border-color: white; transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.2); }
+    .store-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; transition: 200ms cubic-bezier(0.23, 1, 0.32, 1); }
     
-    .icon-box { 
-      width: 64px; height: 64px; border-radius: 20px; background: white; 
-      display: flex; align-items: center; justify-content: center; 
-      font-size: 1.8rem; margin-bottom: 30px; color: var(--primary); 
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); 
-    }
-    .about-card h3 { font-size: 1.6rem; font-weight: 800; margin-bottom: 15px; color: white; }
-    .about-card p { font-size: 1.1rem; line-height: 1.6; margin: 0; text-align: left; color: rgba(255,255,255,0.8); }
+    .store-logo-item:hover .logo-wrapper { filter: grayscale(0%) opacity(1); }
+    .store-logo-item:hover .store-name { color: white; }
+    .store-logo-item:active { transform: scale(0.95); }
 
-    /* Contact Section */
-    .contact-section { max-width: 1200px; margin: 80px auto; padding: 0 20px; }
-    .contact-card { 
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      border-radius: 40px; padding: 60px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px;
-      color: white; box-shadow: 0 30px 60px -12px rgba(0, 150, 255, 0.3);
-    }
-    .contact-info h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 20px; color: white; letter-spacing: -1px; }
-    .contact-info p { font-size: 1.1rem; opacity: 0.9; margin-bottom: 40px; line-height: 1.6; color: white; }
+    @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-    .contact-form { display: flex; flex-direction: column; gap: 15px; }
-    .contact-form .form-group { width: 100%; }
+    /* Features */
+    .features-section { padding: 120px 40px; max-width: 1400px; margin: 0 auto; border-bottom: 1px solid var(--border-color); }
+    .features-header { margin-bottom: 80px; }
+    .features-header h2 { font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; line-height: 1.1; max-width: 700px; }
+    
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; }
+    .feature-card { 
+      border-left: 1px solid var(--border-color); padding-left: 30px; 
+      opacity: 0; transform: translateY(15px);
+      animation: featureEnter 500ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    .feature-card:nth-child(1) { animation-delay: 100ms; }
+    .feature-card:nth-child(2) { animation-delay: 180ms; }
+    .feature-card:nth-child(3) { animation-delay: 260ms; }
+    @keyframes featureEnter { to { opacity: 1; transform: translateY(0); } }
+    .feature-number { font-size: 0.85rem; font-weight: 800; color: var(--text-muted); margin-bottom: 20px; }
+    .feature-card h3 { font-size: 1.6rem; font-weight: 600; margin-bottom: 15px; letter-spacing: -0.5px; }
+    .feature-card p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+    /* Contact */
+    .contact-section { padding: 120px 40px; max-width: 1400px; margin: 0 auto; }
+    .contact-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
+    .contact-info h2 { font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 20px; }
+    .contact-info p { font-size: 1.2rem; color: var(--text-muted); line-height: 1.6; max-width: 500px; }
+
+    .contact-form { display: flex; flex-direction: column; gap: 0; }
+    .input-row { border-bottom: 1px solid var(--border-color); }
     .contact-form input, .contact-form textarea { 
-      width: 100%; padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1); color: white; font-family: inherit; font-size: 1rem;
-      transition: 0.3s;
+      width: 100%; padding: 25px 0; border: none; background: transparent; color: white; 
+      font-family: inherit; font-size: 1.2rem; font-weight: 300; transition: border-color 0.3s;
     }
-    .contact-form input::placeholder, .contact-form textarea::placeholder { color: rgba(255,255,255,0.6); }
-    .contact-form input:focus, .contact-form textarea:focus { background: rgba(255,255,255,0.2); outline: none; border-color: white; }
-    .contact-form textarea { height: 120px; resize: none; }
-    .contact-form .btn-primary { 
-      background: #ffffff; color: #0096ff !important; width: 100%; border: none; 
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: flex; align-items: center; 
-      justify-content: center; gap: 10px; font-weight: 800; min-height: 55px;
+    .contact-form textarea { height: 100px; resize: none; margin-top: 10px; }
+    .contact-form input:focus, .contact-form textarea:focus { outline: none; }
+    .contact-form input::placeholder, .contact-form textarea::placeholder { color: #555; }
+    
+    .btn-submit { 
+      background: white !important; color: black !important; padding: 20px; border: none; width: 100%; 
+      font-weight: 600; font-size: 1.1rem; margin-top: 40px; cursor: pointer; 
+      transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .contact-form .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
-    .success-msg { margin-top: 15px; font-weight: 800; text-align: center; color: #4ade80; }
+    .btn-submit:hover { background: #e0e0e0 !important; }
+    .btn-submit:active { transform: scale(0.98); }
+    .success-msg { margin-top: 20px; font-weight: 600; color: #fff; font-size: 0.9rem; }
 
-    footer { text-align: center; padding: 60px 20px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 0.9rem; font-weight: 600; }
+    /* Footer */
+    .landing-footer { border-top: 1px solid var(--border-color); padding: 40px; background: var(--bg-surface); }
+    .footer-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
 
     @media (max-width: 992px) {
-      .contact-card { grid-template-columns: 1fr; padding: 40px; gap: 40px; }
-      .contact-info h2 { font-size: 2rem; }
+      .contact-wrapper { grid-template-columns: 1fr; gap: 60px; }
+      h1 { font-size: 4rem; }
     }
-
     @media (max-width: 768px) {
-      h1 { font-size: 2.8rem; letter-spacing: -1px; }
-      p { font-size: 1.1rem; }
-      .about-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 3rem; letter-spacing: -1px; }
+      .features-header h2 { font-size: 2.5rem; }
+      .contact-info h2 { font-size: 2.5rem; }
+      .feature-card { border-left: none; border-top: 1px solid var(--border-color); padding-left: 0; padding-top: 30px; }
     }
   `]
 })
@@ -309,16 +274,12 @@ export class LandingComponent implements OnInit {
   ngOnInit() {
     this.dataService.getPublicStores().subscribe({
       next: (data) => {
-        // 1. Separamos destacadas de las normales
         const featured = data.filter(s => s.is_featured);
-        // 2. Aleatorizamos las normales
         const others = data.filter(s => !s.is_featured).sort(() => Math.random() - 0.5);
-        
-        // 3. Unimos: primero las destacadas, luego el resto al azar
         const displayData = [...featured, ...others];
 
         if (displayData.length > 0) {
-          const itemWidth = 210;
+          const itemWidth = 220; // Adjusted for new gap/width
           const targetWidth = 4000;
           const repetitions = Math.max(2, Math.ceil(targetWidth / (displayData.length * itemWidth)) * 2);
           

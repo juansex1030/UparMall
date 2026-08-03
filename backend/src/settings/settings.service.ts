@@ -39,18 +39,16 @@ export class SettingsService {
   async findByStoreId(storeId: string) {
     let { data: settings } = await this.supabase.adminClient
       .from('Settings')
-      .select('*, Stores ( slug )')
+      .select('*, Stores ( slug, store_type )')
       .eq('storeId', storeId)
       .single();
     const { error } = await this.supabase.adminClient
       .from('Settings')
-      .select('*, Stores ( slug )')
+      .select('*, Stores ( slug, store_type )')
       .eq('storeId', storeId)
       .single();
 
     if (error && error.code === 'PGRST116') {
-      console.log('New user detected, creating default settings for:', storeId);
-
       const { data: userResponse, error: userError } =
         (await this.supabase.adminClient.auth.admin?.getUserById(storeId)) || {
           data: null,
@@ -87,7 +85,6 @@ export class SettingsService {
         }
       }
 
-      console.log('Creating store with unique slug:', defaultSlug);
       const { error: storeError } = await this.supabase.adminClient
         .from('Stores')
         .upsert(
@@ -106,7 +103,6 @@ export class SettingsService {
         throw storeError;
       }
 
-      console.log('Creating default settings...');
       // Crear Settings
       const { data: newSettings, error: insertError } =
         await this.supabase.adminClient
@@ -126,11 +122,12 @@ export class SettingsService {
                 heroSlides: [],
                 hasDelivery: true,
                 allowCashOnDelivery: true,
+                enableCombos: false,
               },
             ],
             { onConflict: 'storeId' },
           )
-          .select('*, Stores ( slug )')
+          .select('*, Stores ( slug, store_type )')
           .single();
 
       if (insertError) {
@@ -147,6 +144,7 @@ export class SettingsService {
       ...settings,
       mode: settings.mode || 'standard',
       slug: settings.Stores?.slug,
+      store_type: settings.Stores?.store_type,
     };
   }
 
@@ -203,6 +201,10 @@ export class SettingsService {
       'address',
       'nit',
       'guaranteeTerms',
+      'enableCombos',
+      'allowDigitalTransfers',
+      'digitalTransferDetails',
+      'digitalAccounts',
     ];
 
     const finalPayload: Record<string, unknown> = {};
@@ -211,7 +213,12 @@ export class SettingsService {
         // Normalización de tipos
         if (key === 'deliveryFee') {
           finalPayload[key] = rawPayload[key] ? Number(rawPayload[key]) : 0;
-        } else if (key === 'hasDelivery' || key === 'allowCashOnDelivery') {
+        } else if (
+          key === 'hasDelivery' ||
+          key === 'allowCashOnDelivery' ||
+          key === 'enableCombos' ||
+          key === 'allowDigitalTransfers'
+        ) {
           finalPayload[key] = Boolean(rawPayload[key]);
         } else {
           finalPayload[key] = rawPayload[key];
@@ -220,9 +227,6 @@ export class SettingsService {
     }
 
     // 3. ACTUALIZACIÓN DE TABLA SETTINGS
-    console.log('--- DEBUG SETTINGS UPDATE ---');
-    console.log('Store ID:', storeId);
-    console.log('Payload:', JSON.stringify(finalPayload, null, 2));
 
     const { data, error: updateError } = await this.supabase.adminClient
       .from('Settings')
@@ -238,8 +242,6 @@ export class SettingsService {
         HttpStatus.BAD_REQUEST,
       );
     }
-
-    console.log('Update Successful');
 
     return {
       ...data,

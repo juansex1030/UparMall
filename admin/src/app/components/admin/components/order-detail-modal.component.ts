@@ -1,11 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Order, Settings } from '@shared/models/models';
+import { FormsModule } from '@angular/forms';
+import { Order, Settings, Product } from '@shared/models/models';
+import { DataService } from '@shared/services/data.service';
 
 @Component({
   selector: 'app-order-detail-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="loading-overlay" (click)="close.emit()" style="z-index: 10000; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
       <div class="glass-panel main-modal-container" (click)="$event.stopPropagation()" style="max-width: 700px; width: 95%; padding: 0; overflow: hidden; border-radius: 24px; background: #fff;">
@@ -43,6 +45,7 @@ import { Order, Settings } from '@shared/models/models';
                 </div>
               </div>
               <div class="invoice-meta">
+                <div *ngIf="order.table_id" class="invoice-badge" style="background: #ef4444; margin-right: 5px;">MESA</div>
                 <div class="invoice-badge">PEDIDO #{{ order.id }}</div>
                 <div class="invoice-date">{{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
               </div>
@@ -95,10 +98,49 @@ import { Order, Settings } from '@shared/models/models';
                       </div>
                     </td>
                     <td class="text-right">$ {{ item.price | number }}</td>
-                    <td class="text-right">$ {{ item.price * item.quantity | number }}</td>
+                    <td class="text-right">
+                      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+                        <span>$ {{ item.price * item.quantity | number }}</span>
+                        <button class="btn-delete-item no-print" *ngIf="canEditOrder()" (click)="deleteItem(item.id, item.product_name)" [disabled]="isDeletingItem === item.id">
+                           <i class="fas" [ngClass]="isDeletingItem === item.id ? 'fa-spinner fa-spin' : 'fa-trash-alt'"></i>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Add Item Section (No Print) -->
+            <div class="no-print add-item-section" *ngIf="canEditOrder()">
+              <h4>Añadir Productos Adicionales</h4>
+              <div class="add-item-form">
+                <select [(ngModel)]="selectedProductId" class="form-input w-select">
+                  <option [ngValue]="null">Selecciona un producto...</option>
+                  <option *ngFor="let p of products" [ngValue]="p.id">{{ p.name }} - $ {{ p.price | number }}</option>
+                </select>
+                <input type="number" [(ngModel)]="quantityToAdd" min="1" class="form-input w-qty" placeholder="Cant.">
+                <input type="text" [(ngModel)]="addNotes" class="form-input w-notes" [placeholder]="settings?.store_type === 'RETAIL' ? 'Notas (Ej: Cable blanco)' : 'Notas (Ej: sin cebolla)'">
+                <button class="btn-add" [disabled]="!selectedProductId || addingItem" (click)="addItemToOrder()">
+                  <i class="fas fa-plus" *ngIf="!addingItem"></i>
+                  <i class="fas fa-spinner fa-spin" *ngIf="addingItem"></i>
+                  Agregar
+                </button>
+              </div>
+            </div>
+
+            <!-- Add Discount Section (No Print) -->
+            <div class="no-print add-item-section discount-section" *ngIf="canEditOrder()">
+              <h4>Aplicar Descuento</h4>
+              <div class="add-item-form">
+                <input type="number" [(ngModel)]="discountAmount" min="1" class="form-input w-discount" placeholder="Monto (Ej: 20000)">
+                <input type="text" [(ngModel)]="discountReason" class="form-input w-notes" placeholder="Motivo (Ej: Promo Combo)">
+                <button class="btn-add btn-discount" [disabled]="!discountAmount || addingDiscount" (click)="applyDiscount()">
+                  <i class="fas fa-percent" *ngIf="!addingDiscount"></i>
+                  <i class="fas fa-spinner fa-spin" *ngIf="addingDiscount"></i>
+                  Descontar
+                </button>
+              </div>
             </div>
 
             <!-- Footer Totals -->
@@ -190,6 +232,28 @@ import { Order, Settings } from '@shared/models/models';
     .btn-close-x { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .btn-close-x:hover { background: rgba(255,255,255,0.2); }
 
+    /* Add Item Styles */
+    .add-item-section { margin-top: 25px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
+    .add-item-section h4 { margin: 0 0 10px; font-size: 0.85rem; color: #475569; text-transform: uppercase; font-weight: 900; }
+    .add-item-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .form-input { padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.85rem; font-family: inherit; }
+    .w-select { flex: 1; min-width: 200px; }
+    .w-qty { width: 70px; }
+    .w-notes { flex: 1; min-width: 150px; }
+    .btn-add { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+    .btn-add:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+    .btn-add:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .discount-section { border-color: #fcd34d; background: #fffbeb; }
+    .discount-section h4 { color: #d97706; }
+    .w-discount { width: 140px; }
+    .btn-discount { background: #eab308; }
+    .btn-discount:hover:not(:disabled) { background: #d97706; }
+
+    .btn-delete-item { background: transparent; color: #ef4444; border: none; font-size: 1rem; cursor: pointer; padding: 5px; border-radius: 6px; transition: 0.2s; opacity: 0.5; }
+    .btn-delete-item:hover { background: #fee2e2; opacity: 1; }
+    .btn-delete-item:disabled { cursor: not-allowed; opacity: 0.3; }
+
     /* PRINT STYLES */
     @media print {
       body * { visibility: hidden; }
@@ -208,7 +272,95 @@ import { Order, Settings } from '@shared/models/models';
 export class OrderDetailModalComponent {
   @Input() order!: Order;
   @Input() settings: Settings | null = null;
+  @Input() products: Product[] = [];
+  
   @Output() close = new EventEmitter<void>();
+  @Output() orderUpdated = new EventEmitter<void>();
+
+  selectedProductId: number | null = null;
+  quantityToAdd = 1;
+  addNotes = '';
+  addingItem = false;
+  isDeletingItem: string | number | null = null;
+  
+  discountAmount: number | null = null;
+  discountReason = '';
+  addingDiscount = false;
+
+  constructor(private dataService: DataService) {}
+
+  canEditOrder(): boolean {
+    if (!this.order || !this.order.status) return false;
+    const s = this.order.status.toLowerCase();
+    // Consider adding items is allowed if order is new or being prepared.
+    return ['open', 'pendiente', 'confirmado'].includes(s);
+  }
+
+  addItemToOrder() {
+    if (!this.selectedProductId) return;
+    const product = this.products.find(p => p.id === this.selectedProductId);
+    if (!product) return;
+
+    this.addingItem = true;
+    const payload = [{
+      productId: product.id,
+      productName: product.name,
+      price: product.price,
+      quantity: this.quantityToAdd,
+      notes: this.addNotes
+    }];
+
+    this.dataService.addOrderItems(this.order.id, payload).subscribe({
+      next: () => {
+        this.addingItem = false;
+        this.selectedProductId = null;
+        this.quantityToAdd = 1;
+        this.addNotes = '';
+        this.orderUpdated.emit();
+      },
+      error: (err) => {
+        console.error('Error adding item', err);
+        alert('Hubo un error añadiendo el producto al pedido');
+        this.addingItem = false;
+      }
+    });
+  }
+
+  deleteItem(itemId: string | number, productName: string) {
+    if (confirm(`¿Estás seguro de eliminar "${productName}" de la orden?`)) {
+      this.isDeletingItem = itemId;
+      this.dataService.deleteOrderItem(this.order.id, itemId).subscribe({
+        next: () => {
+          this.isDeletingItem = null;
+          this.orderUpdated.emit();
+        },
+        error: (err) => {
+          console.error('Error eliminando item', err);
+          alert('Hubo un error eliminando el producto del pedido');
+          this.isDeletingItem = null;
+        }
+      });
+    }
+  }
+
+  applyDiscount() {
+    if (!this.discountAmount || this.discountAmount <= 0) return;
+    
+    this.addingDiscount = true;
+    this.dataService.applyDiscount(this.order.id, this.discountAmount, this.discountReason).subscribe({
+      next: () => {
+        this.addingDiscount = false;
+        this.discountAmount = null;
+        this.discountReason = '';
+        this.orderUpdated.emit();
+      },
+      error: (err) => {
+        console.error('Error applying discount', err);
+        alert(err.error?.message || 'Hubo un error al aplicar el descuento');
+        this.addingDiscount = false;
+      }
+    });
+  }
 
   getOptionsArray(options: any): {key: string, val: string}[] {
     if (!options) return [];

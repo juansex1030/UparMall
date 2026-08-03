@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, timeout } from 'rxjs';
 import { environment } from '@env/environment';
-import { Product, Settings } from '../models/models';
+import { Product, Settings, Table, Staff, Order } from '../models/models';
 
 @Injectable({
   providedIn: 'root'
@@ -69,8 +69,8 @@ export class DataService {
     return this.http.get<any[]>(`${this.apiUrl}/master/leads`);
   }
 
-  createMasterStore(email: string, password?: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/master/create-store`, { email, password });
+  createMasterStore(email: string, password?: string, store_type: string = 'RETAIL'): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/master/create-store`, { email, password, store_type });
   }
 
   resetMasterStorePassword(userId: string, password?: string): Observable<any> {
@@ -110,6 +110,10 @@ export class DataService {
     return this.http.get<any[]>(`${this.apiUrl}/orders`);
   }
 
+  getOrderById(id: string | number): Observable<Order> {
+    return this.http.get<Order>(`${this.apiUrl}/orders/${id}`);
+  }
+
   updateOrderStatus(orderId: string | number, status: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/orders/${orderId}/status`, { status });
   }
@@ -118,7 +122,50 @@ export class DataService {
     return this.http.delete<any>(`${this.apiUrl}/orders/${orderId}`);
   }
 
-  getOrderStats(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/orders/stats`);
+  getOrderStats(period?: string): Observable<any> {
+    const url = period ? `${this.apiUrl}/orders/stats?period=${period}` : `${this.apiUrl}/orders/stats`;
+    return this.http.get<any>(url);
+  }
+
+  addOrderItems(orderId: string | number, items: any[]): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/orders/${orderId}/add-items`, { items });
+  }
+
+  deleteOrderItem(orderId: string | number, itemId: string | number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/orders/${orderId}/items/${itemId}`);
+  }
+
+  applyDiscount(orderId: string | number, amount: number, reason: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/orders/${orderId}/discount`, { amount, reason });
+  }
+
+  // Tables
+  getTables(): Observable<Table[]> {
+    return this.http.get<Table[]>(`${this.apiUrl}/tables`);
+  }
+
+  createTable(name: string): Observable<Table> {
+    return this.http.post<Table>(`${this.apiUrl}/tables`, { name });
+  }
+
+  updateTableStatus(tableId: string, status: string, orderId?: string): Observable<Table> {
+    return this.http.patch<Table>(`${this.apiUrl}/tables/${tableId}/status`, { status, orderId });
+  }
+
+  deleteTable(tableId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/tables/${tableId}`);
+  }
+
+  // Staff
+  getStaff(): Observable<Staff[]> {
+    return this.http.get<Staff[]>(`${this.apiUrl}/staff`);
+  }
+
+  createStaff(staff: Partial<Staff>): Observable<Staff> {
+    return this.http.post<Staff>(`${this.apiUrl}/staff`, staff);
+  }
+
+  deleteStaff(staffId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/staff/${staffId}`);
   }
 }

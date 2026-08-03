@@ -151,7 +151,7 @@
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -185,7 +185,7 @@
 }
 
 .btn-action:active {
-  transform: translateY(0) scale(0.98);
+  transform: scale(0.97) !important;
 }
 
 .tabs-container {
@@ -212,7 +212,7 @@
   font-weight: 850;
   color: #475569;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -222,7 +222,10 @@
 .tab-btn:hover {
   background: rgba(255, 255, 255, 0.4);
   color: var(--primary);
-  transform: translateY(-1px);
+}
+
+.tab-btn:active {
+  transform: scale(0.97);
 }
 
 .tab-btn.active {
@@ -248,12 +251,16 @@
   align-items: center;
   gap: 10px;
   font-size: 1rem;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .preview-toggle:hover {
-  transform: translateY(-2.5px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.05);
   background: #e2e8f0;
+}
+
+.preview-toggle:active {
+  transform: scale(0.97);
 }
 
 .preview-toggle.active {
@@ -298,7 +305,8 @@
   top: 40px;
   left: 50%;
   transform: translateX(-50%);
-  background: #0f172a;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
   color: white;
   padding: 14px 32px;
   border-radius: 100px;
@@ -309,16 +317,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  animation: toastPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: toastPop 400ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
   border: 1px solid rgba(255,255,255,0.1);
 }
 
 .toast-error {
-  background: #ef4444;
+  background: rgba(239, 68, 68, 0.95);
   box-shadow: 0 20px 40px rgba(239, 68, 68, 0.3);
 }
 
 @keyframes toastPop {
-  0% { transform: translate(-50%, -100px); opacity: 0; }
-  100% { transform: translate(-50%, 0); opacity: 1; }
+  0% { transform: translate(-50%, -40px) scale(0.9); opacity: 0; filter: blur(8px); }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; filter: blur(0); }
 }

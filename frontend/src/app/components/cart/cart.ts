@@ -114,10 +114,11 @@ import { Subscription } from 'rxjs';
                 <span>Efectivo</span>
               </button>
               <button 
+                *ngIf="settings?.allowDigitalTransfers"
                 class="payment-pill" 
                 [class.active]="paymentMethod === 'transferencia'"
                 (click)="paymentMethod = 'transferencia'">
-                <span class="payment-icon">🏦</span>
+                <span class="payment-icon">📱</span>
                 <span>Transferencia</span>
               </button>
               <button 
@@ -128,6 +129,34 @@ import { Subscription } from 'rxjs';
                 <span class="payment-icon">🚚</span>
                 <span>Contraentrega</span>
               </button>
+            </div>
+          </div>
+          
+          <!-- Transfer Details Card (Visible only when Transferencia is selected) -->
+          <div class="transfer-details-card" *ngIf="paymentMethod === 'transferencia' && (settings?.digitalTransferDetails || settings?.digitalAccounts?.length)">
+            <div class="transfer-header">
+              <span class="icon">📱</span>
+              <h5>Datos para Transferencia</h5>
+            </div>
+            <p class="transfer-instructions">
+              Realiza el pago a cualquiera de las siguientes cuentas. 
+              <strong>Recuerda enviar el comprobante de pago por WhatsApp junto con tu pedido.</strong>
+            </p>
+            
+            <div class="digital-accounts-list" *ngIf="settings?.digitalAccounts?.length">
+              <div *ngFor="let acc of settings.digitalAccounts" class="bank-card" [ngClass]="acc.bank">
+                <div class="bank-logo-area">
+                  <span class="b-name">{{ getBankName(acc.bank) }}</span>
+                </div>
+                <div class="b-details">
+                  <div class="b-number">{{ acc.number }}</div>
+                  <div class="b-owner">{{ acc.name }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="transfer-info" *ngIf="!settings?.digitalAccounts?.length && settings?.digitalTransferDetails">
+              {{ settings?.digitalTransferDetails }}
             </div>
           </div>
 
@@ -195,6 +224,61 @@ import { Subscription } from 'rxjs';
     .payment-icon { font-size: 1.5rem; }
     .payment-pill span:not(.payment-icon) { font-size: 0.8rem; font-weight: 700; color: #555; }
     .payment-pill.active span { color: var(--primary-color); }
+    
+    .transfer-details-card { 
+      margin-top: 15px; padding: 20px; background: rgba(255,255,255,0.7); 
+      backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); 
+      border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      animation: fadeInDown 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .transfer-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .transfer-header h5 { margin: 0; font-size: 1.05rem; font-weight: 800; color: #1a1a1a; }
+    .transfer-instructions { font-size: 0.85rem; color: #666; margin-bottom: 12px; line-height: 1.4; }
+    .transfer-info { 
+      background: #f8f9fa; padding: 15px; border-radius: 8px; 
+      font-family: monospace; font-size: 0.9rem; color: #333; 
+      white-space: pre-wrap; border: 1px dashed #ccc;
+    }
+    
+    .digital-accounts-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+    .bank-card {
+      display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px;
+      background: white; border: 2px solid transparent; position: relative; overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+    .bank-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+    
+    .bank-card.nequi { background: #fff0f7; }
+    .bank-card.nequi::before { background: #D1007A; }
+    .bank-card.nequi .b-name { color: #D1007A; }
+    
+    .bank-card.daviplata { background: #fff1f1; }
+    .bank-card.daviplata::before { background: #DF0000; }
+    .bank-card.daviplata .b-name { color: #DF0000; }
+    
+    .bank-card.breb { background: #f0fdf4; }
+    .bank-card.breb::before { background: #00A65A; }
+    .bank-card.breb .b-name { color: #00A65A; }
+    
+    .bank-card.bancolombia { background: #fffbeb; }
+    .bank-card.bancolombia::before { background: #FCD34D; }
+    .bank-card.bancolombia .b-name { color: #b45309; }
+
+    .bank-card.otro { background: #f8fafc; }
+    .bank-card.otro::before { background: #64748b; }
+    .bank-card.otro .b-name { color: #334155; }
+
+    .bank-logo-area { width: 90px; flex-shrink: 0; display: flex; align-items: center; }
+    .b-name { font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .b-details { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .b-number { font-size: 1.1rem; font-family: monospace; font-weight: 800; color: #1e293b; letter-spacing: 1px; }
+    .b-owner { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     .summary-box { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
     .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; color: #666; font-size: 1.1rem; }
@@ -277,6 +361,17 @@ export class CartComponent implements OnInit, OnDestroy {
   paymentMethod: 'efectivo' | 'transferencia' | 'contraentrega' = 'efectivo';
   isSending = false;
   private _subs = new Subscription();
+
+  getBankName(code: string): string {
+    const map: any = {
+      nequi: 'Nequi',
+      daviplata: 'Daviplata',
+      breb: 'Bre-B',
+      bancolombia: 'Bancolombia',
+      otro: 'Otro Banco'
+    };
+    return map[code] || code;
+  }
 
   get finalTotal() {
     return this.totalPrice + (this.deliveryMethod === 'delivery' ? this.deliveryFee : 0);
@@ -410,7 +505,7 @@ export class CartComponent implements OnInit, OnDestroy {
         );
         
         if (link) {
-          console.log('Pedido guardado. Redirigiendo a WhatsApp:', link);
+
           this.cartService.clearCart();
           // Usamos window.open para mejor compatibilidad y evitar bloqueos
           window.open(link, '_blank');

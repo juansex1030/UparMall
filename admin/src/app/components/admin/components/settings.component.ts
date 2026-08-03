@@ -96,6 +96,83 @@ import { Settings, Product } from '@shared/models/models';
               </div>
             </div>
 
+            <div class="form-grid-1" style="margin-top: 10px; padding: 20px; background: #f8fafc; border-radius: 18px; border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 20px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                  <i class="fas fa-layer-group" [style.color]="settings.enableCombos ? '#059669' : '#94a3b8'"></i>
+                  Habilitar creación de Combos
+                </label>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div class="ios-toggle" [class.active]="settings.enableCombos" 
+                       (click)="settings.enableCombos = !settings.enableCombos">
+                    <div class="toggle-handle"></div>
+                  </div>
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #475569;">
+                    {{ settings.enableCombos ? 'HABILITADO' : 'DESHABILITADO' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Pagos Digitales -->
+              <div class="form-group" style="margin-bottom: 0; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                  <i class="fas fa-mobile-alt" [style.color]="settings.allowDigitalTransfers ? '#059669' : '#94a3b8'"></i>
+                  Transferencias Digitales (Nequi, Daviplata, Bre-B)
+                </label>
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                  <div class="ios-toggle" [class.active]="settings.allowDigitalTransfers" 
+                       (click)="settings.allowDigitalTransfers = !settings.allowDigitalTransfers">
+                    <div class="toggle-handle"></div>
+                  </div>
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #475569;">
+                    {{ settings.allowDigitalTransfers ? 'HABILITADO' : 'DESHABILITADO' }}
+                  </span>
+                </div>
+                
+                <!-- Gestor de Cuentas -->
+                <div *ngIf="settings.allowDigitalTransfers" class="animate-in" style="margin-top: 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label style="margin: 0;">Cuentas de Recaudo (Bancos)</label>
+                    <button class="btn-action btn-light" style="padding: 6px 12px; font-size: 0.75rem;" (click)="addDigitalAccount()">
+                      <i class="fas fa-plus"></i> Añadir Cuenta
+                    </button>
+                  </div>
+                  
+                  <div class="accounts-list" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div *ngFor="let acc of settings.digitalAccounts; let i = index" class="account-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; display: flex; gap: 15px; align-items: flex-start; position: relative;">
+                      <button class="btn-icon-delete" style="position: absolute; top: -10px; right: -10px; width: 28px; height: 28px;" (click)="removeDigitalAccount(i)">
+                        <i class="fas fa-times" style="font-size: 12px;"></i>
+                      </button>
+                      
+                      <div class="form-group" style="margin: 0; width: 120px;">
+                        <label style="font-size: 0.7rem;">Banco</label>
+                        <select [(ngModel)]="acc.bank" style="padding: 10px;">
+                          <option value="nequi">Nequi</option>
+                          <option value="daviplata">Daviplata</option>
+                          <option value="breb">Bre-B</option>
+                          <option value="bancolombia">Bancolombia</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                      </div>
+                      
+                      <div class="form-group" style="margin: 0; flex: 1;">
+                        <label style="font-size: 0.7rem;">Número</label>
+                        <input type="text" [(ngModel)]="acc.number" placeholder="Ej: 300 123 4567" style="padding: 10px;">
+                      </div>
+                      
+                      <div class="form-group" style="margin: 0; flex: 1;">
+                        <label style="font-size: 0.7rem;">Titular</label>
+                        <input type="text" [(ngModel)]="acc.name" placeholder="Juan Perez" style="padding: 10px;">
+                      </div>
+                    </div>
+                  </div>
+                  <div *ngIf="!settings.digitalAccounts || settings.digitalAccounts.length === 0" style="text-align: center; padding: 20px; background: white; border: 1px dashed #cbd5e1; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 0.85rem;">
+                    No has añadido ninguna cuenta. Presiona "Añadir Cuenta".
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="form-group">
               <label>Sobre Nosotros (Descripción)</label>
               <textarea [(ngModel)]="settings.description" rows="4" placeholder="Escribe aquí la historia o descripción de tu negocio..."></textarea>
@@ -645,6 +722,17 @@ export class SettingsComponent {
     this.isPasswordError = false;
 
     this.changePassword.emit(this.newPassword);
+  }
+
+  addDigitalAccount() {
+    if (!this.settings) return;
+    if (!this.settings.digitalAccounts) this.settings.digitalAccounts = [];
+    this.settings.digitalAccounts.push({ bank: 'nequi', number: '', name: '' });
+  }
+
+  removeDigitalAccount(index: number) {
+    if (!this.settings?.digitalAccounts) return;
+    this.settings.digitalAccounts.splice(index, 1);
   }
 
   public setPasswordFeedback(msg: string, isError: boolean) {

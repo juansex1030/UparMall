@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Order } from '@shared/models/models';
+import { Order, Settings } from '@shared/models/models';
 
 @Component({
   selector: 'app-orders',
@@ -42,7 +42,7 @@ import { Order } from '@shared/models/models';
               <tr *ngFor="let order of orders">
                 <td>
                   <div class="client-cell">
-                    <span class="c-name">{{ order.customer_name }}</span>
+                    <span class="c-name">{{ order.customer_name }} <span *ngIf="order.table_id" class="table-badge"><i class="fas fa-utensils"></i> Mesa</span></span>
                     <span class="c-phone">📱 {{ order.customer_phone }}</span>
                   </div>
                 </td>
@@ -57,10 +57,12 @@ import { Order } from '@shared/models/models';
                 </td>
                 <td>
                   <select [value]="order.status" (change)="onStatusChange(order, $event)" class="status-pill-select" [attr.data-status]="order.status">
+                    <option value="open" *ngIf="settings?.store_type === 'RESTAURANT'">🍳 En Cocina</option>
                     <option value="pendiente">⏳ Pendiente</option>
                     <option value="confirmado">✅ Confirmado</option>
                     <option value="en_camino">🛵 En Camino</option>
                     <option value="entregado">🏠 Entregado</option>
+                    <option value="completed" *ngIf="settings?.store_type === 'RESTAURANT'">💵 Cobrado / Cerrado</option>
                     <option value="cancelado">❌ Cancelado</option>
                   </select>
                 </td>
@@ -81,7 +83,7 @@ import { Order } from '@shared/models/models';
           <div *ngFor="let order of orders" class="order-mobile-card">
             <div class="card-top">
               <div class="card-client">
-                <span class="m-name">{{ order.customer_name }}</span>
+                <span class="m-name">{{ order.customer_name }} <span *ngIf="order.table_id" class="table-badge"><i class="fas fa-utensils"></i> Mesa</span></span>
                 <span class="m-date">{{ order.created_at | date:'dd MMM, HH:mm' }}</span>
               </div>
               <div class="card-price">$ {{ order.total | number }}</div>
@@ -89,10 +91,12 @@ import { Order } from '@shared/models/models';
             
             <div class="card-mid">
               <select [value]="order.status" (change)="onStatusChange(order, $event)" class="status-pill-select m-status" [attr.data-status]="order.status">
+                <option value="open" *ngIf="settings?.store_type === 'RESTAURANT'">🍳 En Cocina</option>
                 <option value="pendiente">⏳ Pendiente</option>
                 <option value="confirmado">✅ Confirmado</option>
                 <option value="en_camino">🛵 En Camino</option>
                 <option value="entregado">🏠 Entregado</option>
+                <option value="completed" *ngIf="settings?.store_type === 'RESTAURANT'">💵 Cobrado / Cerrado</option>
                 <option value="cancelado">❌ Cancelado</option>
               </select>
             </div>
@@ -139,6 +143,8 @@ import { Order } from '@shared/models/models';
     .date-cell { font-size: 0.9rem; color: #334155; font-weight: 700; display: flex; flex-direction: column; }
     .date-cell .time { color: #94a3b8; font-size: 0.75rem; }
     
+    .table-badge { background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; vertical-align: middle; }
+
     .price-val { font-weight: 950; color: #1a1a1a; font-size: 1.05rem; }
 
     .status-pill-select {
@@ -146,10 +152,12 @@ import { Order } from '@shared/models/models';
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 10px center;
     }
+    .status-pill-select[data-status="open"] { background-color: #ffedd5; color: #9a3412; }
     .status-pill-select[data-status="pendiente"] { background-color: #fef3c7; color: #92400e; }
     .status-pill-select[data-status="confirmado"] { background-color: #dcfce7; color: #166534; }
     .status-pill-select[data-status="en_camino"] { background-color: #dbeafe; color: #1e40af; }
     .status-pill-select[data-status="entregado"] { background-color: #f1f5f9; color: #475569; }
+    .status-pill-select[data-status="completed"] { background-color: #ecfccb; color: #3f6212; }
     .status-pill-select[data-status="cancelado"] { background-color: #fee2e2; color: #991b1b; }
 
     .actions-cell { display: flex; gap: 10px; align-items: center; }
@@ -205,6 +213,7 @@ import { Order } from '@shared/models/models';
 })
 export class OrdersComponent {
   @Input() orders: Order[] = [];
+  @Input() settings: Settings | null = null;
   @Output() statusChange = new EventEmitter<{order: Order, status: string}>();
   @Output() viewDetails = new EventEmitter<Order>();
   @Output() delete = new EventEmitter<Order>();

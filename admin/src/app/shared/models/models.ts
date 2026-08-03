@@ -12,6 +12,9 @@ export interface Product {
   manageStock?: boolean;
   stock?: number;
   lowStockThreshold?: number;
+  // Combos
+  isCombo?: boolean;
+  comboItems?: any[];
 }
 
 export interface ProductSpecification {
@@ -47,6 +50,7 @@ export interface BusinessDay {
 export interface Settings {
   id: number;
   storeId: string;
+  store_type?: 'RETAIL' | 'RESTAURANT';
   businessName: string;
   logoUrl?: string;
   primaryColor: string;
@@ -77,16 +81,27 @@ export interface Settings {
   address?: string;
   nit?: string;
   guaranteeTerms?: string;
+  enableCombos?: boolean;
+  allowDigitalTransfers?: boolean;
+  digitalTransferDetails?: string;
+  digitalAccounts?: DigitalAccount[];
+}
+
+export interface DigitalAccount {
+  bank: 'nequi' | 'daviplata' | 'breb' | 'bancolombia' | 'otro';
+  number: string;
+  name: string;
 }
 
 export interface OrderItem {
-  id: number;
-  order_id: number;
+  id: string | number;
+  order_id: string | number;
   product_id: number;
   product_name: string;
   price: number;
   quantity: number;
   options?: any;
+  notes?: string;
 }
 
 export interface Order {
@@ -98,9 +113,11 @@ export interface Order {
   total: number;
   payment_method: string;
   notes?: string;
-  status: 'pendiente' | 'confirmado' | 'en_camino' | 'entregado' | 'cancelado';
+  status: 'open' | 'pendiente' | 'confirmado' | 'en_camino' | 'entregado' | 'cancelado' | 'pagado' | 'completed';
   created_at: string;
   updated_at: string;
+  table_id?: string;
+  waiter_id?: string;
   OrderItems?: OrderItem[];
 }
 
@@ -108,4 +125,24 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedOptions?: { [variantName: string]: VariantOption };
+}
+
+export interface Table {
+  id: string;
+  store_id: string;
+  name: string;
+  status: 'free' | 'occupied' | 'pending_payment';
+  current_order_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Staff {
+  id: string;
+  store_id: string;
+  name: string;
+  role: 'WAITER' | 'KITCHEN' | 'ADMIN';
+  pin_code: string;
+  created_at: string;
+  updated_at: string;
 }

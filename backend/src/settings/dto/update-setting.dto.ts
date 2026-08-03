@@ -99,4 +99,20 @@ export class UpdateSettingDto {
   @IsString()
   @IsOptional()
   guaranteeTerms?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enableCombos?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowDigitalTransfers?: boolean;
+
+  @IsString()
+  @IsOptional()
+  digitalTransferDetails?: string;
+
+  @IsArray()
+  @IsOptional()
+  digitalAccounts?: any[];
 }

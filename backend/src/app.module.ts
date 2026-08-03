@@ -14,6 +14,8 @@ import { OrdersModule } from './orders/orders.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { MaintenanceInterceptor } from './common/interceptors/maintenance.interceptor';
+import { TablesModule } from './tables/tables.module';
+import { StaffModule } from './staff/staff.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { MaintenanceInterceptor } from './common/interceptors/maintenance.interc
         limit: process.env['NODE_ENV'] === 'production' ? 100 : 1000,
       },
     ]),
+    TablesModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [

@@ -20,7 +20,7 @@ export class UploadsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
-      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for better security
+      limits: { fileSize: 10 * 1024 * 1024 }, // Increased to 10MB
       fileFilter: (req, file, cb) => {
         // 1. Check extension
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {

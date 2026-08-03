@@ -17,6 +17,8 @@ import { MasterControlComponent } from './components/master-control.component';
 import { OrderDetailModalComponent } from './components/order-detail-modal.component';
 import { AnalyticsComponent } from './components/analytics.component';
 import { LoyaltyComponent } from './components/loyalty.component';
+import { PosTablesComponent } from './components/pos-tables.component';
+import { StaffComponent } from './components/staff.component';
 
 @Component({
   selector: 'app-admin',
@@ -31,13 +33,15 @@ import { LoyaltyComponent } from './components/loyalty.component';
     MasterControlComponent,
     OrderDetailModalComponent,
     AnalyticsComponent,
-    LoyaltyComponent
+    LoyaltyComponent,
+    PosTablesComponent,
+    StaffComponent
   ],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css']
 })
 export class AdminComponent implements OnInit, OnDestroy {
-  activeTab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' = 'products';
+  activeTab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' | 'tables' | 'staff' = 'products';
   orders: Order[] = [];
   products: Product[] = [];
   categories: string[] = ['Todos'];
@@ -70,7 +74,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const savedTab = localStorage.getItem('admin_active_tab');
-    if (savedTab && ['products', 'settings', 'master', 'orders', 'analytics'].includes(savedTab)) {
+    if (savedTab && ['products', 'settings', 'master', 'orders', 'analytics', 'tables', 'staff'].includes(savedTab)) {
       this.activeTab = savedTab as any;
     }
 
@@ -93,7 +97,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     clearTimeout(this.toastTimer);
   }
 
-  setActiveTab(tab: 'products' | 'settings' | 'master' | 'orders' | 'analytics') {
+  setActiveTab(tab: 'products' | 'settings' | 'master' | 'orders' | 'analytics' | 'tables' | 'staff') {
     this.activeTab = tab;
     localStorage.setItem('admin_active_tab', tab);
     
@@ -172,6 +176,19 @@ export class AdminComponent implements OnInit, OnDestroy {
       },
       error: () => this.showToast('Error al cargar pedidos', true)
     });
+  }
+
+  onOrderUpdated() {
+    this.loadOrders();
+    if (this.selectedOrder) {
+      this.dataService.getOrderById(this.selectedOrder.id).subscribe({
+        next: (updatedOrder) => {
+          this.selectedOrder = updatedOrder;
+          this.cdr.detectChanges();
+        },
+        error: () => this.showToast('Error recargando los detalles del pedido', true)
+      });
+    }
   }
 
   changeStatus(order: Order, newStatus: string) {

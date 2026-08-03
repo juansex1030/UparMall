@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Product } from '@shared/models/models';
+import { Product, Settings } from '@shared/models/models';
 
 @Component({
   selector: 'app-product-form',
@@ -53,10 +53,53 @@ import { Product } from '@shared/models/models';
               <span class="f-label">Categoría</span>
               <input type="text" [(ngModel)]="product.category" placeholder="Ej: Electrónica">
             </div>
-            <div class="f-group">
+            <div class="f-group" *ngIf="settings?.enableCombos">
+              <span class="f-label">¿Es un Combo?</span>
+              <div class="status-toggle-container" (click)="toggleCombo()">
+                <span style="font-size: 0.8rem; font-weight: 800; color: #64748b;">
+                  {{ product.isCombo ? 'Sí, es un combo de productos' : 'No, es producto individual' }}
+                </span>
+                <div class="ios-toggle-compact" [class.active]="product.isCombo">
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
+            <div class="f-group" *ngIf="!settings?.enableCombos">
               <!-- Espacio para futura propiedad -->
             </div>
           </div>
+          
+          <!-- COMBO SELECTOR -->
+          <div class="s-grid" *ngIf="product.isCombo" style="margin-top: 15px; grid-template-columns: 1fr;">
+            <div class="f-group">
+              <span class="f-label">Productos en el Combo</span>
+              <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <select [(ngModel)]="selectedProductToAdd" style="flex: 1;">
+                  <option [ngValue]="null">Selecciona un producto...</option>
+                  <option *ngFor="let p of availableProductsForCombo" [ngValue]="p">{{ p.name }} - $ {{ p.price }}</option>
+                </select>
+                <button class="btn-add-action indigo" (click)="addComboItem()" style="background: #4f46e5;">
+                  <i class="fas fa-plus"></i> AGREGAR
+                </button>
+              </div>
+              <div class="s-list" style="margin-top: 10px;">
+                <div *ngFor="let item of product.comboItems; let i = index" class="s-item-row" style="background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                  <div class="input-with-label" style="flex: 1;">
+                    <span style="font-weight: 800; font-size: 0.85rem;">{{ getComboItemName(item.productId) }}</span>
+                  </div>
+                  <div class="input-with-label" style="width: 80px;">
+                    <span class="mini-label">Cant.</span>
+                    <input type="number" [(ngModel)]="item.quantity" min="1" style="padding: 6px 10px;">
+                  </div>
+                  <button class="btn-del-action" (click)="removeComboItem(i)" title="Eliminar del combo">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+                <div *ngIf="!product.comboItems?.length" class="empty-msg">No has añadido productos al combo</div>
+              </div>
+            </div>
+          </div>
+
           <div class="f-group">
             <span class="f-label">Descripción Detallada</span>
             <textarea [(ngModel)]="product.description" rows="2" placeholder="Describe brevemente las ventajas..."></textarea>
@@ -166,7 +209,7 @@ import { Product } from '@shared/models/models';
         </div>
 
         <!-- GESTIÓN DE STOCK (OPCIONAL) -->
-        <div class="slim-section s-rose">
+        <div class="slim-section s-rose" *ngIf="!product.isCombo">
           <div class="s-header">
             <span><i class="fas fa-warehouse"></i> Control de Inventario (Opcional)</span>
             <div class="ios-toggle-compact" [class.active]="product.manageStock" (click)="product.manageStock = !product.manageStock">
@@ -373,6 +416,10 @@ export class ProductFormComponent {
   @Input() product: Partial<Product> = {};
   @Input() editingProduct: Product | null = null;
   @Input() isSaving = false;
+  @Input() settings: Settings | null = null;
+  @Input() products: Product[] = [];
+  
+  selectedProductToAdd: Product | null = null;
   
   @Output() save = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
@@ -389,4 +436,41 @@ export class ProductFormComponent {
   removeOption(vIdx: number, oIdx: number) { this.product.variants![vIdx].options.splice(oIdx, 1); }
   addSpecification() { if (!this.product.specifications) this.product.specifications = []; this.product.specifications.push({ key: '', value: '' }); }
   removeSpecification(index: number) { this.product.specifications?.splice(index, 1); }
+
+  toggleCombo() {
+    this.product.isCombo = !this.product.isCombo;
+    if (this.product.isCombo && !this.product.comboItems) {
+      this.product.comboItems = [];
+    }
+  }
+
+  get availableProductsForCombo() {
+    return this.products.filter(p => p.id !== this.product.id && !p.isCombo);
+  }
+
+  addComboItem() {
+    if (!this.selectedProductToAdd) return;
+    if (!this.product.comboItems) this.product.comboItems = [];
+    
+    // Check if already added
+    const existing = this.product.comboItems.find(i => i.productId === this.selectedProductToAdd!.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      this.product.comboItems.push({
+        productId: this.selectedProductToAdd.id,
+        quantity: 1
+      });
+    }
+    this.selectedProductToAdd = null;
+  }
+
+  removeComboItem(index: number) {
+    this.product.comboItems?.splice(index, 1);
+  }
+
+  getComboItemName(productId: number): string {
+    const p = this.products.find(x => x.id === productId);
+    return p ? p.name : 'Producto Desconocido';
+  }
 }

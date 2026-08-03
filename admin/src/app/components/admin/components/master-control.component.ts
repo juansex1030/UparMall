@@ -48,11 +48,18 @@ import { DataService } from '../../../shared/services/data.service';
               <label>Correo del Dueño</label>
               <input type="email" [(ngModel)]="newUserEmail" placeholder="ejemplo@correo.com" class="m-input">
             </div>
-            <div class="f-group">
+            <div class="f-group" style="grid-column: span 2;">
               <label>Contraseña Temporal (Opcional)</label>
               <input type="password" [(ngModel)]="newUserPassword" placeholder="Dejar vacío para 'UparMall2026*'" class="m-input">
             </div>
-            <div class="f-group" style="display: flex; align-items: flex-end;">
+            <div class="f-group">
+              <label>Tipo de Tienda</label>
+              <select [(ngModel)]="newStoreType" class="m-input" style="cursor: pointer; appearance: auto;">
+                <option value="RETAIL">🛍️ Retail (Tienda Normal)</option>
+                <option value="RESTAURANT">🍽️ Restaurante (POS)</option>
+              </select>
+            </div>
+            <div class="f-group" style="display: flex; align-items: flex-end; grid-column: span 3;">
               <button class="btn-create" [disabled]="isCreating || !newUserEmail" (click)="onCreateStore()">
                 <i class="fas" [class.fa-plus]="!isCreating" [class.fa-spinner]="isCreating" [class.fa-spin]="isCreating" style="margin-right: 8px;"></i>
                 {{ isCreating ? 'Creando...' : 'Dar de Alta' }}
@@ -135,7 +142,11 @@ import { DataService } from '../../../shared/services/data.service';
             </thead>
             <tbody>
               <tr *ngFor="let store of safeStores">
-                <td><span style="font-weight: 850;">{{ store.businessName || store.name }}</span></td>
+                <td>
+                  <span style="font-weight: 850;">{{ store.businessName || store.name }}</span>
+                  <span *ngIf="store.store_type === 'RESTAURANT'" style="margin-left: 8px; background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; vertical-align: middle;"><i class="fas fa-utensils"></i> POS</span>
+                  <span *ngIf="store.store_type !== 'RESTAURANT'" style="margin-left: 8px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; vertical-align: middle;"><i class="fas fa-shopping-bag"></i> RETAIL</span>
+                </td>
                 <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px;">/{{ store.slug }}</code></td>
                 <td>{{ store.ownerEmail }}</td>
                 <td>
@@ -295,9 +306,9 @@ import { DataService } from '../../../shared/services/data.service';
     .s-section h3 { font-size: 1.75rem; font-weight: 950; letter-spacing: -1px; color: #0f172a; }
 
     .create-store-form { background: #f8fafc; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0; }
-    .form-grid { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 20px; }
+    .form-grid { display: grid; grid-template-columns: 2fr 2fr 1.5fr; gap: 20px; }
     .f-group label { display: block; font-size: 0.75rem; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 10px; }
-    .m-input { width: 100%; padding: 14px 20px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+    .m-input { width: 100%; padding: 14px 20px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; font-weight: 700; color: #0f172a; box-sizing: border-box; }
     .m-input:focus { outline: none; border-color: #0f172a; background: white; }
     
     .btn-create { width: 100%; background: #0f172a; color: white; padding: 14px; border: none; border-radius: 12px; font-weight: 850; cursor: pointer; transition: 0.2s; }
@@ -356,6 +367,7 @@ export class MasterControlComponent {
 
   newUserEmail = '';
   newUserPassword = '';
+  newStoreType = 'RETAIL';
   isCreating = false;
   message = '';
   isError = false;
@@ -414,12 +426,13 @@ export class MasterControlComponent {
     this.message = '';
     this.isError = false;
 
-    this.dataService.createMasterStore(this.newUserEmail, this.newUserPassword).subscribe({
+    this.dataService.createMasterStore(this.newUserEmail, this.newUserPassword, this.newStoreType).subscribe({
       next: (res) => {
         this.isCreating = false;
         this.message = '¡Éxito! El usuario ha sido dado de alta correctamente.';
         this.newUserEmail = '';
         this.newUserPassword = '';
+        this.newStoreType = 'RETAIL';
         this.refresh.emit();
       },
       error: (err) => {

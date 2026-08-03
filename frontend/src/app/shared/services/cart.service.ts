@@ -192,6 +192,9 @@ export class CartService {
       'contraentrega': 'Contraentrega'
     };
     lines.push('METODO DE PAGO: ' + (paymentLabels[paymentMethod] || paymentMethod));
+    if (paymentMethod === 'transferencia') {
+      lines.push('*(Se adjuntará comprobante de pago por este medio)*');
+    }
     lines.push('');
 
     lines.push('PRODUCTOS');

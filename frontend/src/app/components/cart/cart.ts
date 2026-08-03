@@ -144,7 +144,7 @@ import { Subscription } from 'rxjs';
             </p>
             
             <div class="digital-accounts-list" *ngIf="settings?.digitalAccounts?.length">
-              <div *ngFor="let acc of settings.digitalAccounts" class="bank-card" [ngClass]="acc.bank">
+              <div *ngFor="let acc of settings?.digitalAccounts" class="bank-card" [ngClass]="acc.bank">
                 <div class="bank-logo-area">
                   <span class="b-name">{{ getBankName(acc.bank) }}</span>
                 </div>

@@ -17,7 +17,11 @@ export class AuthService {
   authEvent$ = this.authEventSubject.asObservable();
 
   constructor() {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, {
+      auth: {
+        storage: window.sessionStorage
+      }
+    });
 
     this.supabase.auth.getSession().then(({ data: { session } }) => {
       this.currentSessionSubject.next(session);

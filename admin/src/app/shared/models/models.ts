@@ -15,6 +15,7 @@ export interface Product {
   // Combos
   isCombo?: boolean;
   comboItems?: any[];
+  isPinned?: boolean;
 }
 
 export interface ProductSpecification {

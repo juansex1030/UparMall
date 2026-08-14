@@ -120,6 +120,15 @@ export class SettingsService {
                 navbarStyle: 'glass',
                 socialLinks: { instagram: '', facebook: '', tiktok: '' },
                 heroSlides: [],
+                businessHours: [
+                  { day: 'Lunes', open: '08:00', close: '18:00', enabled: true },
+                  { day: 'Martes', open: '08:00', close: '18:00', enabled: true },
+                  { day: 'Miércoles', open: '08:00', close: '18:00', enabled: true },
+                  { day: 'Jueves', open: '08:00', close: '18:00', enabled: true },
+                  { day: 'Viernes', open: '08:00', close: '18:00', enabled: true },
+                  { day: 'Sábado', open: '09:00', close: '14:00', enabled: true },
+                  { day: 'Domingo', open: '09:00', close: '14:00', enabled: false }
+                ],
                 hasDelivery: true,
                 allowCashOnDelivery: true,
                 enableCombos: false,

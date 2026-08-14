@@ -33,6 +33,68 @@ export class OrdersService {
 
       const now = new Date().toISOString();
 
+      // 2. Verify all products belong to this store and calculate real total
+      const productIds = items.map((i) => i.productId);
+      const { data: validProducts, error: productsError } =
+        await this.supabase.adminClient
+          .from('Product')
+          .select('id, price, variants')
+          .eq('storeId', orderData.storeId)
+          .in('id', productIds);
+
+      if (
+        productsError ||
+        !validProducts ||
+        (validProducts as unknown[]).length !== [...new Set(productIds)].length
+      ) {
+        throw new Error(
+          'Uno o más productos no pertenecen a esta tienda o no están disponibles.',
+        );
+      }
+
+      // Build product map for pricing
+      const productMap = new Map((validProducts as any[]).map((p) => [p.id, p]));
+
+      // Calculate safe total
+      let calculatedTotal = 0;
+      const itemsPayload = items.map((item) => {
+        const prod = productMap.get(item.productId);
+        let itemBasePrice = Number(prod.price) || 0;
+        let optionsExtraPrice = 0;
+
+        // Verify options pricing
+        if (item.options && typeof item.options === 'object') {
+          const prodVariants = prod.variants || [];
+          for (const [vName, selectedOpt] of Object.entries<any>(item.options)) {
+            // Find variant in DB
+            const dbVariant = prodVariants.find((v: any) => v.name === vName);
+            if (dbVariant && dbVariant.options) {
+              const dbOption = dbVariant.options.find(
+                (o: any) => o.label === selectedOpt?.label,
+              );
+              if (dbOption) {
+                optionsExtraPrice += Number(dbOption.price) || 0;
+              }
+            }
+          }
+        }
+
+        const finalItemPrice = itemBasePrice + optionsExtraPrice;
+        calculatedTotal += finalItemPrice * (Number(item.quantity) || 1);
+
+        return {
+          order_id: null, // to be updated
+          product_id: item.productId,
+          product_name: item.productName,
+          price: finalItemPrice,
+          quantity: item.quantity,
+          options: item.options,
+        };
+      });
+
+      // Override total provided by client
+      const finalTotal = calculatedTotal;
+
       const payload = {
         store_id: orderData.storeId,
         customer_name: orderData.customerName,
@@ -40,7 +102,7 @@ export class OrdersService {
         customer_address: orderData.customerAddress,
         table_id: orderData.tableId,
         waiter_id: orderData.waiterId,
-        total: orderData.total,
+        total: finalTotal,
         payment_method: orderData.paymentMethod,
         notes: orderData.notes,
         status: orderData.tableId ? 'open' : 'pendiente',
@@ -61,35 +123,9 @@ export class OrdersService {
         );
       }
 
-      // 2. Verify all products belong to this store
-      const productIds = items.map((i) => i.productId);
-      const { data: validProducts, error: productsError } =
-        await this.supabase.adminClient
-          .from('Product')
-          .select('id')
-          .eq('storeId', orderData.storeId)
-          .in('id', productIds);
-
-      if (
-        productsError ||
-        !validProducts ||
-        (validProducts as unknown[]).length !== [...new Set(productIds)].length
-      ) {
-        throw new Error(
-          'Uno o más productos no pertenecen a esta tienda o no están disponibles.',
-        );
-      }
-
       // 3. Insert Order Items
       const orderId = (order as Record<string, unknown>).id;
-      const itemsPayload = items.map((item) => ({
-        order_id: orderId,
-        product_id: item.productId,
-        product_name: item.productName,
-        price: item.price,
-        quantity: item.quantity,
-        options: item.options,
-      }));
+      itemsPayload.forEach((i) => (i.order_id = orderId as any));
 
       const { error: itemsError } = await this.supabase.adminClient
         .from('OrderItems')
@@ -173,16 +209,62 @@ export class OrdersService {
       }
 
       const items = addItemsDto.items;
+      
+      const productIds = items.map((i) => i.productId);
+      const { data: validProducts, error: productsError } =
+        await this.supabase.adminClient
+          .from('Product')
+          .select('id, price, variants')
+          .eq('storeId', storeId)
+          .in('id', productIds);
 
-      // 2. Insert new Order Items
-      const itemsPayload = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.productId,
-        product_name: item.productName,
-        price: item.price,
-        quantity: item.quantity,
-        options: item.notes ? { 'Nota adicional': item.notes } : null,
-      }));
+      if (
+        productsError ||
+        !validProducts ||
+        (validProducts as unknown[]).length !== [...new Set(productIds)].length
+      ) {
+        throw new BadRequestException('Uno o más productos no pertenecen a esta tienda.');
+      }
+      
+      const productMap = new Map((validProducts as any[]).map((p) => [p.id, p]));
+
+      // 2. Insert new Order Items and calc total
+      let addedItemsTotal = 0;
+      
+      const itemsPayload = items.map((item) => {
+        const prod = productMap.get(item.productId);
+        let itemBasePrice = Number(prod.price) || 0;
+        // In addItemsDto options are passed as notes or similar?
+        // Wait, addItemsDto usually sends notes, let's keep extra calculation if it's there
+        let optionsExtraPrice = 0;
+        
+        if (item.options && typeof item.options === 'object') {
+          const prodVariants = prod.variants || [];
+          for (const [vName, selectedOpt] of Object.entries<any>(item.options)) {
+            const dbVariant = prodVariants.find((v: any) => v.name === vName);
+            if (dbVariant && dbVariant.options) {
+              const dbOption = dbVariant.options.find(
+                (o: any) => o.label === selectedOpt?.label,
+              );
+              if (dbOption) {
+                optionsExtraPrice += Number(dbOption.price) || 0;
+              }
+            }
+          }
+        }
+
+        const finalItemPrice = itemBasePrice + optionsExtraPrice;
+        addedItemsTotal += finalItemPrice * (Number(item.quantity) || 1);
+
+        return {
+          order_id: order.id,
+          product_id: item.productId,
+          product_name: item.productName,
+          price: finalItemPrice,
+          quantity: item.quantity,
+          options: item.options || (item.notes ? { 'Nota adicional': item.notes } : null),
+        };
+      });
 
       const { error: itemsError } = await this.supabase.adminClient
         .from('OrderItems')
@@ -191,11 +273,7 @@ export class OrdersService {
       if (itemsError) throw itemsError;
 
       // 3. Update Order Total
-      const newItemsTotal = items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      );
-      const newTotal = Number(order.total) + newItemsTotal;
+      const newTotal = Number(order.total) + addedItemsTotal;
 
       await this.supabase.adminClient
         .from('Orders')
@@ -325,6 +403,10 @@ export class OrdersService {
 
       if (amount <= 0) {
         throw new BadRequestException('El monto del descuento debe ser mayor a 0');
+      }
+      
+      if (amount > Number(order.total)) {
+        throw new BadRequestException('El descuento no puede ser mayor al total del pedido');
       }
 
       const newTotal = Math.max(0, Number(order.total) - amount);

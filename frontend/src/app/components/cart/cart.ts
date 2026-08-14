@@ -73,8 +73,8 @@ import { Subscription } from 'rxjs';
                 <input type="text" [(ngModel)]="shippingInfo.name" placeholder="Ej: Juan Pérez">
               </div>
               <div class="form-group">
-                <label>Número de contacto</label>
-                <input type="tel" [(ngModel)]="shippingInfo.phone" placeholder="Ej: 300 123 4567">
+                <label>Número de contacto / Usuario</label>
+                <input type="text" [(ngModel)]="shippingInfo.phone" placeholder="Ej: 300 123 4567 o @usuario">
               </div>
               <div class="form-group full-width">
                 <label>Dirección completa</label>
@@ -96,8 +96,8 @@ import { Subscription } from 'rxjs';
                 <input type="text" [(ngModel)]="pickupName" placeholder="Nombre completo">
               </div>
               <div class="form-group">
-                <label>Número de contacto</label>
-                <input type="tel" [(ngModel)]="pickupPhone" placeholder="Ej: 300 123 4567">
+                <label>Número de contacto / Usuario</label>
+                <input type="text" [(ngModel)]="pickupPhone" placeholder="Ej: 300 123 4567 o @usuario">
               </div>
             </div>
           </div>

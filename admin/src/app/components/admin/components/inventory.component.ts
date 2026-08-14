@@ -49,6 +49,9 @@ import { Product } from '@shared/models/models';
             <div class="card-bottom">
               <span class="price-text">$ {{ product.price | number }}</span>
               <div class="card-actions">
+                <button class="btn-circle" (click)="togglePin.emit(product)" [style.background]="product.isPinned ? '#6366f1' : 'white'" [style.color]="product.isPinned ? 'white' : '#64748b'" title="Fijar al inicio">
+                  <i class="fas fa-thumbtack"></i>
+                </button>
                 <button class="btn-circle" (click)="edit.emit(product)" title="Editar">
                   <i class="fas fa-edit"></i>
                 </button>
@@ -166,6 +169,7 @@ export class InventoryComponent {
   @Input() categories: string[] = ['Todos'];
   @Output() edit = new EventEmitter<Product>();
   @Output() delete = new EventEmitter<number>();
+  @Output() togglePin = new EventEmitter<Product>();
   @Output() add = new EventEmitter<void>();
 
   searchTerm = '';

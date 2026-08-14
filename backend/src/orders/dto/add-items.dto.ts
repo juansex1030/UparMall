@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsObject,
 } from 'class-validator';
 
 export class AddOrderItemDto {
@@ -26,6 +27,10 @@ export class AddOrderItemDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsObject()
+  @IsOptional()
+  options?: Record<string, any>;
 }
 
 export class AddItemsDto {

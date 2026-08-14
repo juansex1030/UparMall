@@ -56,4 +56,8 @@ export class CreateProductDto {
 
   @IsOptional()
   comboItems?: any[];
+
+  @IsBoolean()
+  @IsOptional()
+  isPinned?: boolean;
 }

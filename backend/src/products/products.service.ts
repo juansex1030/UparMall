@@ -23,6 +23,7 @@ export class ProductsService {
       lowStockThreshold: createProductDto.lowStockThreshold ?? 5,
       isCombo: createProductDto.isCombo ?? false,
       comboItems: createProductDto.comboItems ?? [],
+      isPinned: createProductDto.isPinned ?? false,
       createdAt: now,
       updatedAt: now,
     };
@@ -41,6 +42,7 @@ export class ProductsService {
     let query = this.supabase.adminClient
       .from('Product')
       .select('*')
+      .order('isPinned', { ascending: false, nullsFirst: false })
       .order('createdAt', { ascending: false });
 
     if (storeId) {
@@ -68,6 +70,7 @@ export class ProductsService {
       .select('*')
       .eq('storeId', store.id)
       .eq('isActive', true) // Solo productos activos en la tienda pública
+      .order('isPinned', { ascending: false, nullsFirst: false })
       .order('createdAt', { ascending: false });
 
     if (error) throw error;
@@ -81,6 +84,9 @@ export class ProductsService {
       .eq('id', id);
     if (storeId) {
       query = query.eq('storeId', storeId);
+    } else {
+      // Petición pública: solo permitir productos activos
+      query = query.eq('isActive', true);
     }
     const { data, error } = await query.single();
 
@@ -124,6 +130,8 @@ export class ProductsService {
       payload['isCombo'] = updateProductDto.isCombo;
     if (updateProductDto.comboItems !== undefined)
       payload['comboItems'] = updateProductDto.comboItems;
+    if (updateProductDto.isPinned !== undefined)
+      payload['isPinned'] = updateProductDto.isPinned;
 
     const { data, error } = await this.supabase.adminClient
       .from('Product')

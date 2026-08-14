@@ -248,6 +248,18 @@ export class AdminComponent implements OnInit, OnDestroy {
     });
   }
 
+  toggleProductPin(product: Product) {
+    const updatedStatus = !product.isPinned;
+    this.dataService.updateProduct(product.id, { isPinned: updatedStatus }).subscribe({
+      next: () => {
+        product.isPinned = updatedStatus;
+        this.showToast(updatedStatus ? 'Producto fijado' : 'Producto desfijado');
+        this.loadProducts();
+      },
+      error: () => this.showToast('Error al fijar producto', true)
+    });
+  }
+
   deleteProduct(id: number) {
     if (confirm('¿Deseas eliminar este producto?')) {
       this.dataService.deleteProduct(id).subscribe({

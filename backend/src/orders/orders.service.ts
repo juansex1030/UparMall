@@ -53,19 +53,23 @@ export class OrdersService {
       }
 
       // Build product map for pricing
-      const productMap = new Map((validProducts as any[]).map((p) => [p.id, p]));
+      const productMap = new Map(
+        (validProducts as any[]).map((p) => [p.id, p]),
+      );
 
       // Calculate safe total
       let calculatedTotal = 0;
       const itemsPayload = items.map((item) => {
         const prod = productMap.get(item.productId);
-        let itemBasePrice = Number(prod.price) || 0;
+        const itemBasePrice = Number(prod.price) || 0;
         let optionsExtraPrice = 0;
 
         // Verify options pricing
         if (item.options && typeof item.options === 'object') {
           const prodVariants = prod.variants || [];
-          for (const [vName, selectedOpt] of Object.entries<any>(item.options)) {
+          for (const [vName, selectedOpt] of Object.entries<any>(
+            item.options,
+          )) {
             // Find variant in DB
             const dbVariant = prodVariants.find((v: any) => v.name === vName);
             if (dbVariant && dbVariant.options) {
@@ -209,7 +213,7 @@ export class OrdersService {
       }
 
       const items = addItemsDto.items;
-      
+
       const productIds = items.map((i) => i.productId);
       const { data: validProducts, error: productsError } =
         await this.supabase.adminClient
@@ -223,24 +227,30 @@ export class OrdersService {
         !validProducts ||
         (validProducts as unknown[]).length !== [...new Set(productIds)].length
       ) {
-        throw new BadRequestException('Uno o más productos no pertenecen a esta tienda.');
+        throw new BadRequestException(
+          'Uno o más productos no pertenecen a esta tienda.',
+        );
       }
-      
-      const productMap = new Map((validProducts as any[]).map((p) => [p.id, p]));
+
+      const productMap = new Map(
+        (validProducts as any[]).map((p) => [p.id, p]),
+      );
 
       // 2. Insert new Order Items and calc total
       let addedItemsTotal = 0;
-      
+
       const itemsPayload = items.map((item) => {
         const prod = productMap.get(item.productId);
-        let itemBasePrice = Number(prod.price) || 0;
+        const itemBasePrice = Number(prod.price) || 0;
         // In addItemsDto options are passed as notes or similar?
         // Wait, addItemsDto usually sends notes, let's keep extra calculation if it's there
         let optionsExtraPrice = 0;
-        
+
         if (item.options && typeof item.options === 'object') {
           const prodVariants = prod.variants || [];
-          for (const [vName, selectedOpt] of Object.entries<any>(item.options)) {
+          for (const [vName, selectedOpt] of Object.entries<any>(
+            item.options,
+          )) {
             const dbVariant = prodVariants.find((v: any) => v.name === vName);
             if (dbVariant && dbVariant.options) {
               const dbOption = dbVariant.options.find(
@@ -262,7 +272,9 @@ export class OrdersService {
           product_name: item.productName,
           price: finalItemPrice,
           quantity: item.quantity,
-          options: item.options || (item.notes ? { 'Nota adicional': item.notes } : null),
+          options:
+            item.options ||
+            (item.notes ? { 'Nota adicional': item.notes } : null),
         };
       });
 
@@ -326,8 +338,14 @@ export class OrdersService {
         throw new NotFoundException('Pedido no encontrado');
       }
 
-      if (['pagado', 'paid', 'cancelled', 'cancelado', 'entregado'].includes(order.status.toLowerCase())) {
-        throw new BadRequestException('No se pueden eliminar productos de un pedido ya cerrado o pagado');
+      if (
+        ['pagado', 'paid', 'cancelled', 'cancelado', 'entregado'].includes(
+          order.status.toLowerCase(),
+        )
+      ) {
+        throw new BadRequestException(
+          'No se pueden eliminar productos de un pedido ya cerrado o pagado',
+        );
       }
 
       // 2. Find the OrderItem
@@ -377,14 +395,24 @@ export class OrdersService {
       return { success: true, newTotal };
     } catch (error: unknown) {
       console.error('Error in removeItem:', error);
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al eliminar producto del pedido');
+      throw new InternalServerErrorException(
+        'Error al eliminar producto del pedido',
+      );
     }
   }
 
-  async applyDiscount(orderId: string, amount: number, reason: string, storeId: string) {
+  async applyDiscount(
+    orderId: string,
+    amount: number,
+    reason: string,
+    storeId: string,
+  ) {
     try {
       const { data: order, error: orderError } = await this.supabase.adminClient
         .from('Orders')
@@ -397,29 +425,41 @@ export class OrdersService {
         throw new NotFoundException('Pedido no encontrado');
       }
 
-      if (['pagado', 'paid', 'cancelled', 'cancelado', 'entregado'].includes(order.status.toLowerCase())) {
-        throw new BadRequestException('No se pueden aplicar descuentos a un pedido ya cerrado o pagado');
+      if (
+        ['pagado', 'paid', 'cancelled', 'cancelado', 'entregado'].includes(
+          order.status.toLowerCase(),
+        )
+      ) {
+        throw new BadRequestException(
+          'No se pueden aplicar descuentos a un pedido ya cerrado o pagado',
+        );
       }
 
       if (amount <= 0) {
-        throw new BadRequestException('El monto del descuento debe ser mayor a 0');
+        throw new BadRequestException(
+          'El monto del descuento debe ser mayor a 0',
+        );
       }
-      
+
       if (amount > Number(order.total)) {
-        throw new BadRequestException('El descuento no puede ser mayor al total del pedido');
+        throw new BadRequestException(
+          'El descuento no puede ser mayor al total del pedido',
+        );
       }
 
       const newTotal = Math.max(0, Number(order.total) - amount);
       const discountNote = `[DESCUENTO APLICADO: -$${amount}] ${reason || ''}`;
-      
-      let newNotes = order.notes ? order.notes + '\n' + discountNote : discountNote;
+
+      const newNotes = order.notes
+        ? order.notes + '\n' + discountNote
+        : discountNote;
 
       const { error: updateError } = await this.supabase.adminClient
         .from('Orders')
-        .update({ 
-          total: newTotal, 
+        .update({
+          total: newTotal,
           notes: newNotes,
-          updated_at: new Date().toISOString() 
+          updated_at: new Date().toISOString(),
         })
         .eq('id', orderId);
 
@@ -428,7 +468,10 @@ export class OrdersService {
       return { success: true, newTotal, notes: newNotes };
     } catch (error: unknown) {
       console.error('Error in applyDiscount:', error);
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Error al aplicar el descuento');

@@ -235,18 +235,16 @@ export class MasterController {
 
     // Deleting the user from Auth should cascade to Stores if FK is set,
     // but we can delete both explicitly to be safe and avoid orphaned Auth users.
-    const { error: authError } = await this.supabase.adminClient.auth.admin.deleteUser(body.id);
-    
+    const { error: authError } =
+      await this.supabase.adminClient.auth.admin.deleteUser(body.id);
+
     if (authError) {
       console.error('Master Delete Store (Auth) Error:', authError);
       throw authError;
     }
 
     // Fallback: Delete from Stores just in case cascade is off
-    await this.supabase.adminClient
-      .from('Stores')
-      .delete()
-      .eq('id', body.id);
+    await this.supabase.adminClient.from('Stores').delete().eq('id', body.id);
 
     await this.addAuditLog(
       user.email || 'unknown',

@@ -81,10 +81,15 @@ export class OrdersController {
   @Patch(':id/discount')
   applyDiscount(
     @Param('id') id: string,
-    @Body() body: { amount: number, reason: string },
+    @Body() body: { amount: number; reason: string },
     @User() user: SupabaseUser,
   ) {
-    return this.ordersService.applyDiscount(id, body.amount, body.reason, user.id);
+    return this.ordersService.applyDiscount(
+      id,
+      body.amount,
+      body.reason,
+      user.id,
+    );
   }
 
   @UseGuards(SupabaseAuthGuard)
